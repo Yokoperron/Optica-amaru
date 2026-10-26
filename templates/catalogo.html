@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/amaru.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <title>Catálogo | Óptica Amaru</title>
+</head>
+<body>
+    <div class="barnavegacion">
+        <a href="{% url 'inicio' %}">
+            <img src="{% static 'img/logo.png' %}" alt="Logo de la óptica" class="logo" width="100" height="40">
+        </a>
+        <div class="opcionesbarnav">
+            <a href="{% url 'solicitar' %}">Solicitar mis lentes</a>
+            <a href="#">Pedir una hora</a>
+            <a href="{% url 'consultar_estado' %}">Seguir mi pedido</a>
+        </div>
+        <div class="cuentabarnav">
+            <a href="#">Iniciar Sesion</a>
+            <a href="#">Registrarse</a>
+            <a href="#">Ayuda</a>
+        </div>
+    </div>
+    <div class ="titulo-catalogo">
+        <h1>Encuentra tus lentes ideales</h1>
+        <p>Conoce nuestros modelos y encuentra el que necesitas.</p>
+    </div>
+
+    <div class="catalogo">
+        {% for lente in lentes %}
+        <div class="producto">
+            <a href="{% url 'solicitar_producto' lente.id %}" class="enlace-producto">
+                <h2>{{ lente.nombre }}</h2>
+
+                {% if lente.imagen %}
+                    <img src="{{ lente.imagen.url }}"
+                        alt="{{ lente.nombre }}"
+                        width="350">
+                {% endif %}
+
+                <p>Marca: {{ lente.marca }}</p>
+                <p>Precio: ${{ lente.precio }}</p>
+            </a>
+            <a href="{% url 'solicitar_producto' lente.id %}" class="btn-solicitar">
+                Solicitar este lente
+            </a>
+        </div>
+        {% empty %}
+            <p>Todavía no hay lentes publicados.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
