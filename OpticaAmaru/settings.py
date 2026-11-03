@@ -26,7 +26,11 @@ SECRET_KEY = "django-insecure-(%_!m@g_bw9)z-t=9lbvsg9jdy1n!584l^ak#8wx*yv0m=_2#0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "optica-amaru.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
 
 
 # Application definition
