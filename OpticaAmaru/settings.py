@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -74,15 +75,32 @@ WSGI_APPLICATION = "OpticaAmaru.wsgi.application"
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 
+
 DATABASES = {
+    # BASE DE DATOS LOCAL: XAMPP
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "optica_amaru_bd",      # la BD creada en phpMyAdmin
+        "NAME": "optica_amaru_bd",
         "USER": "root",
-        "PASSWORD": "",                 # XAMPP: root sin clave
+        "PASSWORD": "",
         "HOST": "localhost",
         "PORT": "3306",
-    }
+    },
+
+    # BASE DE DATOS EN LA NUBE: AIVEN
+    "aiven": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "optica_amaru",
+        "USER": "avnadmin",
+        "PASSWORD": os.environ.get("AIVEN_DB_PASSWORD"),
+        "HOST": "mysql-21bc8203-diegocarmona7771-46d8.e.aivencloud.com",
+        "PORT": "11712",
+        "OPTIONS": {
+            "ssl": {
+                "ca": str(BASE_DIR / "ca.pem")
+            }
+        },
+    },
 }
 
 
