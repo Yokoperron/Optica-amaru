@@ -23,13 +23,22 @@
             </button>
             <div class="collapse navbar-collapse" id="menu">
                 <ul class="navbar-nav ms-auto gap-1">
-                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'solicitar' %}activo{% endif %}" href="{% url 'solicitar' %}">Solicitar lentes</a></li>
-                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'consultar_estado' %}activo{% endif %}" href="{% url 'consultar_estado' %}">Consultar estado</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'lista_solicitudes' or request.resolver_match.url_name == 'detalle_solicitud' %}activo{% endif %}" href="{% url 'lista_solicitudes' %}">Personal</a></li>
+                    {% if user.is_authenticated %} <!-- el usuario actual "si el usuario ya inicio sesion, muestra los siguiente"-->
+                    <li class="nav-item">
+                        <form method="post" action="{% url 'salir' %}" class="d-inline"> <!-- el boton es un formulario que envia la orden de 'salir'-->
+                            {% csrf_token %} <!-- evita que un atacante obligue cerrar la sesion desde otra pagina -->
+                            <button type="submit" class="nav-link btn btn-link">Cerrar sesión</button>
+                        </form>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
+
+    
+
 
     <main class="flex-grow-1">
         <div class="container py-4 py-md-5">

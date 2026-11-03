@@ -128,6 +128,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 LOGIN_URL = "/admin/login/"
 
+LOGOUT_REDIRECT_URL = '/' # al ejecutar "LogiutView" en url esta la llevara a la pagina de inicio "/"
+                          # eso es lo que hace este apartado 
+
 
 
 
