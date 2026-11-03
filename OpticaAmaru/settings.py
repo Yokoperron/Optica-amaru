@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,11 @@ SECRET_KEY = "django-insecure-(%_!m@g_bw9)z-t=9lbvsg9jdy1n!584l^ak#8wx*yv0m=_2#0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "optica-amaru.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
 
 
 # Application definition
@@ -42,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -74,17 +80,36 @@ WSGI_APPLICATION = "OpticaAmaru.wsgi.application"
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 
+
 DATABASES = {
+    # BASE DE DATOS LOCAL: XAMPP
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "optica_amaru_bd",      # la BD creada en phpMyAdmin
+        "NAME": "optica_amaru_bd",
         "USER": "root",
-        "PASSWORD": "",                 # XAMPP: root sin clave
+        "PASSWORD": "",
         "HOST": "localhost",
         "PORT": "3306",
-    }
-}
+    },
 
+    # BASE DE DATOS EN LA NUBE: AIVEN
+    "aiven": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "optica_amaru",
+        "USER": "avnadmin",
+        "PASSWORD": os.environ.get("AIVEN_DB_PASSWORD"),
+        "HOST": "mysql-21bc8203-diegocarmona7771-46d8.e.aivencloud.com",
+        "PORT": "11712",
+        "OPTIONS": {
+            "ssl": {
+                "ca": str(BASE_DIR / "ca.pem")
+            }
+        },
+    },
+}
+# En Render, utilizar Aiven como base de datos principal
+if os.environ.get("RENDER"):
+    DATABASES["default"] = DATABASES["aiven"]
 
 
 
@@ -118,8 +143,13 @@ USE_TZ = True
 
 
 
-STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]   
+STATIC_URL = "/static/"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 MEDIA_URL = "/media/"
