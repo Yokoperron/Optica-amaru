@@ -15,7 +15,7 @@ def crear_folio():
     return "AMR-" + "".join(random.choices(letras, k=6))
 
 
-# PANTALLAS DEL CLIENTE (no necesitan iniciar sesión) =  Version sin login es mejor wn menos show aunq no lo quiere asi creo lol
+# PANTALLAS DEL CLIENTE (no necesitan iniciar sesión) =  Version sin login (nos quedaremos con esta version)
 
 def inicio(request):
     return render(request, 'inicio.html')

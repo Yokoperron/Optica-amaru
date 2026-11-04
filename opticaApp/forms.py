@@ -40,7 +40,7 @@ def rut_valido(rut):
 class SolicitudForm(forms.Form):
     CONTACTOS = [('WhatsApp', 'WhatsApp'), ('Llamada', 'Llamada'), ('Correo', 'Correo')]
 
-    # --- Paso 1: datos del cliente =  esta wea me costo mucho entenderla vieja qla la jefa de carrera me cae como el picoo aaaaaaaaaaaa vieja qlaaaaaaaaaaaaaaaaaa te odio, hola ---
+    # --- Paso 1: datos del cliente = esto es complicado
     rut = forms.CharField(
         label='RUT', max_length=12,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '12.345.678-5'}),
