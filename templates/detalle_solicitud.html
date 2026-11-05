@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% block titulo %}{{ solicitud.folio }} · Óptica Amaru{% endblock %}
 
@@ -28,6 +29,40 @@
                 <tr><th>RUT</th><td>{{ solicitud.cliente.rut }}</td></tr>
                 <tr><th>Contacto</th><td>{{ solicitud.cliente.contacto }} · {{ solicitud.cliente.telefono }} {{ solicitud.cliente.email }}</td></tr>
                 <tr><th>Solicitud</th><td>{{ solicitud.tipo.nombre }}{% if solicitud.filtro_azul %} · con filtro azul{% endif %}</td></tr>
+
+                <!-- Producto seleccionado del catálogo -->
+                <tr>
+                    <th>Producto</th>
+                    <td>
+                        {% if solicitud.producto %}
+                            {% if solicitud.producto.imagen %}
+                                <img src="{{ solicitud.producto.imagen.url }}"
+                                     alt="{{ solicitud.producto.nombre }}"
+                                     style="width:100px;height:100px;object-fit:contain;"
+                                     class="rounded">
+                                <br>
+                            {% endif %}
+                            <strong>{{ solicitud.producto.nombre }}</strong><br>
+                            Marca: {{ solicitud.producto.marca }}<br>
+                            Precio: ${{ solicitud.producto.precio }}
+                        {% else %}
+                            No seleccionó un producto del catálogo.
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- Dirección de entrega -->
+                <tr>
+                    <th>Dirección</th>
+                    <td>
+                        {{ solicitud.direccion }}<br>
+                        {{ solicitud.comuna }}, {{ solicitud.ciudad }}
+                        {% if solicitud.referencia %}
+                            <br><small class="text-muted">{{ solicitud.referencia }}</small>
+                        {% endif %}
+                    </td>
+                </tr>
+
                 <tr><th>Receta</th><td>{% if solicitud.receta %}<a href="{{ solicitud.receta.url }}" target="_blank">Ver receta</a>{% else %}Sin receta: agendar examen{% endif %}</td></tr>
                 <tr><th>Consentimiento</th><td>{% if solicitud.cliente.acepta_datos %}Sí, aceptó{% else %}No registrado{% endif %}</td></tr>
                 <tr><th>Creada</th><td>{{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}</td></tr>

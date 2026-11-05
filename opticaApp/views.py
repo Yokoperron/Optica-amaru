@@ -15,7 +15,7 @@ def crear_folio():
     return "AMR-" + "".join(random.choices(letras, k=6))
 
 
-# PANTALLAS DEL CLIENTE (no necesitan iniciar sesión) =  Version sin login (nos quedaremos con esta version)
+# PANTALLAS DEL CLIENTE (no necesitan iniciar sesión) =  Version sin login es mejor wn menos show aunq no lo quiere asi creo lol
 
 def inicio(request):
     return render(request, 'inicio.html')
@@ -56,9 +56,14 @@ def solicitar(request, producto_id=None):
                     cliente=cliente,
                     tipo=datos['tipo'],
                     estado=estado_inicial,
+                    producto=producto_seleccionado,
                     filtro_azul=datos['filtro_azul'],
                     indicaciones=datos['indicaciones'],
                     fecha_entrega=date.today() + timedelta(days=7),    # estimamos 7 días
+                    direccion=datos['direccion'],
+                    comuna=datos['comuna'],
+                    ciudad=datos['ciudad'],
+                    referencia=datos['referencia'],
                 )
                 if datos['receta'] and not datos['sin_receta']:
                     solicitud.receta = datos['receta']
@@ -129,7 +134,11 @@ def lista_solicitudes(request):
 # Detalle de una solicitud. Aquí el personal también cambia el estado.
 @login_required
 def detalle_solicitud(request, idSolicitud):
-    solicitud = get_object_or_404(Solicitud, pk=idSolicitud)
+    solicitud = get_object_or_404(
+        Solicitud.objects.select_related(
+            'cliente', 'tipo', 'estado'), 
+            pk=idSolicitud
+            )
 
     if request.method == 'POST':
         form = EstadoForm(request.POST, instance=solicitud)   # instance = "edita ESTA solicitud"

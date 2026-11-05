@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -41,12 +42,6 @@
                 <div class="alert alert-danger">{{ form.non_field_errors }}</div>
                 {% endif %}
 
-                {% comment %}
-                    method="post": los datos viajan escondidos.
-                    enctype="multipart/form-data": hace falta para poder subir un archivo (la receta).
-                    csrf_token: protección obligatoria de Django en todo formulario POST.
-                    {{ form.rut }}, {{ form.nombre }}... dibujan cada campo que está definido en forms.py
-                {% endcomment %}
                 <form method="post" enctype="multipart/form-data" novalidate>
                     {% csrf_token %}
 
@@ -69,7 +64,6 @@
                         <div class="mb-3">
                             <span class="form-label d-block">{{ form.contacto.label }}</span>
                             <div class="opciones">
-                                <!-- Un botón por cada opción de "contacto" (WhatsApp, Llamada, Correo) -->
                                 {% for opcion in form.contacto %}
                                 <label>{{ opcion.tag }} {{ opcion.choice_label }}</label>
                                 {% endfor %}
@@ -114,7 +108,6 @@
                         <div class="mb-3">
                             <span class="form-label d-block">{{ form.tipo.label }}</span>
                             <div class="opciones">
-                                <!-- Un botón por cada fila de la tabla TipoLente -->
                                 {% for opcion in form.tipo %}
                                 <label>{{ opcion.tag }} {{ opcion.choice_label }}</label>
                                 {% empty %}
@@ -134,6 +127,7 @@
                             {{ form.sin_receta }}
                             <span>{{ form.sin_receta.label }}<br><small class="text-secondary">Te ayudamos a agendar un examen de la vista.</small></span>
                         </label>
+
                         <label class="check mb-3">
                             {{ form.filtro_azul }}
                             <span>{{ form.filtro_azul.label }}</span>
@@ -142,19 +136,53 @@
                         <div>
                             <label class="form-label" for="{{ form.indicaciones.id_for_label }}">{{ form.indicaciones.label }}</label>
                             {{ form.indicaciones }}
+                            {{ form.indicaciones.errors }}
                         </div>
                     </div>
 
                     <!-- PASO 3 -->
                     <div class="tarjeta mb-4">
-                        <div class="paso-titulo"><span class="numero">3</span><h2>Confirma y envía</h2></div>
-                        <label class="check mb-2">
-                            {{ form.acepta_datos }}
-                            <span>{{ form.acepta_datos.label }}</span>
-                        </label>
-                        {{ form.acepta_datos.errors }}
-                        <button type="submit" class="btn btn-primary btn-lg mt-3">Enviar solicitud ✓</button>
+                <div class="paso-titulo"><span class="numero">3</span><h2>Dirección de entrega y confirmación</h2></div>
+
+                <!-- DIRECCIÓN -->
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.direccion.id_for_label }}">{{ form.direccion.label }}</label>
+                    {{ form.direccion }}
+                    {{ form.direccion.errors }}
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.comuna.id_for_label }}">{{ form.comuna.label }}</label>
+                        {{ form.comuna }}
+                        {{ form.comuna.errors }}
                     </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.ciudad.id_for_label }}">{{ form.ciudad.label }}</label>
+                        {{ form.ciudad }}
+                        {{ form.ciudad.errors }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.referencia.id_for_label }}">{{ form.referencia.label }}</label>
+                    {{ form.referencia }}
+                    {{ form.referencia.errors }}
+                </div>
+
+                <hr class="my-4">
+
+                <!-- CONFIRMACIÓN -->
+                <label class="check mb-2">
+                    {{ form.acepta_datos }}
+                    <span>{{ form.acepta_datos.label }}</span>
+                </label>
+
+                {{ form.acepta_datos.errors }}
+
+                <button type="submit" class="btn btn-primary btn-lg mt-3">Enviar solicitud ✓</button>
+            </div>
                 </form>
             </div>
         </div>

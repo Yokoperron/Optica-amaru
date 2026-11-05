@@ -40,7 +40,7 @@ def rut_valido(rut):
 class SolicitudForm(forms.Form):
     CONTACTOS = [('WhatsApp', 'WhatsApp'), ('Llamada', 'Llamada'), ('Correo', 'Correo')]
 
-    # --- Paso 1: datos del cliente = esto es complicado
+    # --- Paso 1: datos del cliente ---
     rut = forms.CharField(
         label='RUT', max_length=12,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '12.345.678-5'}),
@@ -59,6 +59,44 @@ class SolicitudForm(forms.Form):
         label='Correo electrónico', required=False,
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'nombre@correo.cl'}),
         error_messages={'invalid': 'Escribe un correo válido, por ejemplo nombre@correo.cl.'})
+    
+    ### --- PASO 1: datos del cliente direccion --- ###
+    direccion = forms.CharField(
+        max_length=200,
+        label="Dirección",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Av. Granaderos 1234'
+        })
+    )
+
+    comuna = forms.CharField(
+        max_length=100,
+        label="Comuna",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Calama'
+        })
+    )
+
+    ciudad = forms.CharField(
+        max_length=100,
+        label="Ciudad",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Calama'
+        })
+    )
+
+    referencia = forms.CharField(
+        max_length=200,
+        required=False,
+        label="Referencia",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Casa azul, frente a la plaza'
+        })
+    )
 
     # ModelChoiceField = una lista que sale de una tabla (aquí, los registros de TipoLente)
     tipo = forms.ModelChoiceField(

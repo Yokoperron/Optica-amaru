@@ -76,5 +76,3 @@ Avisar antes de tocar models.py, urls.py, settings.py y base.html, que son los a
 Las migraciones las crea una sola persona.
 
 Si algún paso te muestra un mensaje que no entiendes, pégamelo completo y lo vemos antes de seguir.
-
-VISITAR: https://optica-amaru.onrender.com/
