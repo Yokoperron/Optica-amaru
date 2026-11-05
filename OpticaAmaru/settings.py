@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    "cloudinary_storage",
+    "cloudinary",
+
     "opticaApp",
 ]
 
@@ -161,6 +165,22 @@ LOGIN_URL = "/admin/login/"
 LOGOUT_REDIRECT_URL = '/' # al ejecutar "LogiutView" en url esta la llevara a la pagina de inicio "/"
                           # eso es lo que hace este apartado 
 
+#configura cloudinary exclusivamente para subir imagenes y archivos a la nube
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
 
 
 

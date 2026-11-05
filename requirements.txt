@@ -4,3 +4,4 @@ gunicorn
 mysqlclient
 Pillow
 whitenoise
+django-cloudinary-storage
