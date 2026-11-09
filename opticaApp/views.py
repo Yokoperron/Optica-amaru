@@ -1,6 +1,7 @@
 import random
 import string
 from datetime import date, timedelta
+from django.db import IntegrityError ## <- Lo nuevo para esta funcion ##
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -18,7 +19,15 @@ def crear_folio():
 # PANTALLAS DEL CLIENTE (no necesitan iniciar sesión) =  Version sin login es mejor wn menos show aunq no lo quiere asi creo lol
 
 def inicio(request):
-    return render(request, 'inicio.html')
+    lentes = ProductoLente.objects.filter(
+        publicado=True
+    ).exclude(
+        imagen=''
+    ).order_by('-id')[:12]
+
+    return render(request, 'inicio.html', {
+        'lentes_inicio': lentes
+    })
 
 
 def catalogo(request):
@@ -151,3 +160,61 @@ def detalle_solicitud(request, idSolicitud):
     return render(request, 'detalle_solicitud.html', {'solicitud': solicitud, 'form': form})
 
 
+## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
+
+
+def pedir_hora(request):
+    if request.method == 'POST':
+        form = CitaForm(request.POST)
+
+        if form.is_valid():
+            datos = form.cleaned_data
+
+            cliente, creado = Cliente.objects.get_or_create(
+                rut=datos['rut'],
+                defaults={
+                    'nombre': datos['nombre'],
+                    'contacto': datos['contacto'],
+                    'telefono': datos['telefono'],
+                    'email': datos['email'],
+                    'acepta_datos': datos['acepta_datos']
+                }
+            )
+
+            if not creado:
+                cliente.nombre = datos['nombre']
+                cliente.contacto = datos['contacto']
+                cliente.telefono = datos['telefono']
+                cliente.email = datos['email']
+                cliente.acepta_datos = datos['acepta_datos']
+                cliente.save()
+
+            try:
+                cita = Cita.objects.create(
+                    cliente=cliente,
+                    fecha=datos['fecha'],
+                    hora=datos['hora'],
+                    motivo=datos['motivo']
+                )
+
+                return redirect('cita_creada', idCita=cita.idCita)
+
+            except IntegrityError:
+                form.add_error(
+                    None,
+                    'Ese horario ya fue reservado. Por favor, selecciona otro.'
+                )
+
+    else:
+        form = CitaForm()
+
+    return render(request, 'pedir_hora.html', {'form': form})
+
+
+def cita_creada(request, idCita):
+    cita = get_object_or_404(
+        Cita.objects.select_related('cliente'),
+        idCita=idCita
+    )
+
+    return render(request, 'cita_creada.html', {'cita': cita})

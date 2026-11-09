@@ -15,6 +15,8 @@ urlpatterns = [
     path('solicitar/listo/<str:folio>/', solicitud_creada, name='solicitud_creada'),
     path('estado/', consultar_estado, name='consultar_estado'),                          # HU06
     path('catalogo/',catalogo, name='catalogo'),
+    path('pedir-hora/', pedir_hora, name='pedir_hora'), #<- pedir hora
+    path('pedir-hora/listo/<int:idCita>/', cita_creada, name='cita_creada'), #<- pedir hora
 
     # Personal (pide iniciar sesión)
     path('panel/', lista_solicitudes, name='lista_solicitudes'),                         # HU03

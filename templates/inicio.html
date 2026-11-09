@@ -52,27 +52,128 @@
             <div class="row g-3 mt-4">
                 <div class="col-md-4">
                     <a class="acceso" href="{% url 'solicitar' %}">
-                        <div class="icono">Crear un logito aqui xd</div>
+                        <div class="icono">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12h2l2-6h5l1 2 1-2h5l2 6h2"/>
+                        <circle cx="7.5" cy="14" r="4.5"/>
+                        <circle cx="16.5" cy="14" r="4.5"/>
+                        <path d="M12 14h0"/>
+                    </svg>
+                </div>
                         <h2 class="h4 mt-2">Solicitar lentes</h2>
                         <p class="text-secondary mb-0">Cuéntanos qué necesitas y adjunta tu receta.</p>
                     </a>
                 </div>
-                <div class="col-md-4">
-                    <div class="acceso pronto">
-                        <div class="icono">Crear un logito aqui xd</div>
-                        <h2 class="h4 mt-2">Pedir una hora</h2>
-                        <p class="text-secondary mb-2">Reserva tu examen de la vista.</p>
-                        <span class="badge text-bg-light">Próximamente</span>
+                
+            <div class="col-md-4">
+                <a class="acceso" href="{% url 'pedir_hora' %}">
+                    <div class="icono">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="16" rx="2"/>
+                            <path d="M16 3v4M8 3v4M3 10h18"/>
+                            <circle cx="16.5" cy="16.5" r="3"/>
+                            <path d="M16.5 15v1.5l1 .5"/>
+                        </svg>
                     </div>
-                </div>
+                    <h2 class="h4 mt-2">Pedir una hora</h2>
+                    <p class="text-secondary mb-0">
+                        Reserva tu examen de la vista.
+                    </p>
+                </a>
+            </div>
+
                 <div class="col-md-4">
                     <a class="acceso" href="{% url 'consultar_estado' %}">
-                        <div class="icono">Crear un logito aqui xd</div>
+                <div class="icono">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="18" height="16" rx="2"/>
+                        <path d="M16 3v4M8 3v4M3 10h18"/>
+                        <path d="m9 15 2 2 4-4"/>
+                    </svg>
+                </div>
                         <h2 class="h4 mt-2">Consultar el estado</h2>
                         <p class="text-secondary mb-0">Con tu RUT y tu código ves en qué etapa va tu solicitud.</p>
                     </a>
                 </div>
             </div>
+            
+<!-- CARRUSEL DE LENTES -->
+<section class="carrusel-inicio mt-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+            <p class="etiqueta-azul mb-1">NUESTROS PRODUCTOS</p>
+            <h2 class="h3 mb-1">Descubre nuestros lentes</h2>
+            <p class="text-secondary mb-0">
+                Conoce algunos de los modelos disponibles en nuestra óptica.
+            </p>
+        </div>
+
+        <div class="carrusel-controles">
+
+    <button type="button"
+            class="btn-carrusel"
+            id="anteriorLentes"
+            aria-label="Ver lentes anteriores">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+
+    <button type="button"
+            class="btn-carrusel"
+            id="siguienteLentes"
+            aria-label="Ver lentes siguientes">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+</div>
+
+    </div>
+
+    <div class="carrusel-ventana" id="ventanaLentes">
+
+        <div class="carrusel-pista" id="pistaLentes">
+
+            {% for lente in lentes_inicio %}
+
+                <a href="{% url 'catalogo' %}"
+                   class="carrusel-producto"
+                   aria-label="Ver catálogo de lentes">
+
+                    <img src="{{ lente.imagen.url }}"
+                         alt="{{ lente.nombre }}"
+                         loading="lazy">
+
+                </a>
+
+            {% empty %}
+
+                <div class="alert alert-light border w-100">
+                    Actualmente no hay imágenes de lentes disponibles.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <div class="text-end mt-3">
+
+        <a href="{% url 'catalogo' %}"
+           class="btn btn-suave">
+            Ver todos los lentes →
+        </a>
+
+    </div>
+
+</section>
 
         </div>
     </main>
@@ -84,6 +185,35 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const ventana = document.getElementById('ventanaLentes');
+    const anterior = document.getElementById('anteriorLentes');
+    const siguiente = document.getElementById('siguienteLentes');
+
+    if (!ventana || !anterior || !siguiente) return;
+
+    anterior.addEventListener('click', function () {
+        ventana.scrollBy({
+            left: -400,
+            behavior: 'smooth'
+        });
+    });
+
+    siguiente.addEventListener('click', function () {
+        ventana.scrollBy({
+            left: 400,
+            behavior: 'smooth'
+        });
+    });
+
+});
+</script>
+
 </body>
 </html>
+

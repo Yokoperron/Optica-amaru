@@ -111,9 +111,7 @@ DATABASES = {
         },
     },
 }
-# En Render, utilizar Aiven como base de datos principal
-if os.environ.get("RENDER"):
-    DATABASES["default"] = DATABASES["aiven"]
+
 
 
 

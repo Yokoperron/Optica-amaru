@@ -1,5 +1,6 @@
 from django import forms
 from opticaApp.models import *
+from datetime import date ## <- esto es nuevo para la creacion del form de pedir hora ##
 
 
 # Función de ayuda: revisa si un RUT es válido (el dígito verificador debe calzar).
@@ -172,3 +173,124 @@ class EstadoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Los estados se muestran en su orden (Recibida, En revisión, En taller...)
         self.fields['estado'].queryset = Estado.objects.order_by('orden')
+
+
+
+## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
+
+class CitaForm(forms.Form):
+
+    CONTACTOS = [
+        ('WhatsApp', 'WhatsApp'),
+        ('Llamada', 'Llamada'),
+        ('Correo', 'Correo'),
+    ]
+
+    MOTIVOS = [
+        ('Examen de la vista', 'Examen de la vista'),
+        ('Control visual', 'Control visual'),
+        ('Evaluación de lentes', 'Evaluación de lentes'),
+        ('Otro', 'Otro'),
+    ]
+
+    rut = forms.CharField(
+        label='RUT',
+        max_length=12,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '12.345.678-5'
+        })
+    )
+
+    nombre = forms.CharField(
+        label='Nombre completo',
+        max_length=120,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder':'Ingresa tu nombre'
+        })
+    )
+    telefono = forms.CharField(
+        label='Telefono',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class':'form-control',
+            'placeholder':'+56 9 1212 2323'
+        })
+    )
+
+    email = forms.EmailField(
+        label='Correo electronico',
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class':'form-control',
+            'placeholder': 'sebastianleiva@correo.cl'
+        })
+    )
+
+    contacto = forms.ChoiceField(
+        label='Medio de contacto preferido',
+        choices=CONTACTOS,
+        initial='Whatsapp'
+    )
+
+    motivo = forms.ChoiceField(
+        label = 'Motivo de la atención',
+        choices=MOTIVOS,
+        widget=forms.Select(attrs={
+            'class':'form-control'
+        })
+    )
+
+    fecha = forms.DateField(
+        label='Hora de la atención',
+        widget=forms.DateInput(attrs={
+            'class':'form-control',
+            'type':'date',
+            'step':'1800'
+        })
+    )
+
+    acepta_datos = forms.BooleanField(
+        label='Acepto el tratamiento de mis datos personales para gestionar mi reserva'
+    )
+
+    def clean_rut(self):
+        rut = rut_valido(self.cleaned_data['rut'])
+        if rut is None:
+            raise forms.ValidationError(
+             'El RUT ingresado no es valido'   
+            )
+        return rut
+
+
+    def clean_fecha(self):
+        fecha = self.cleaned_data['fecha']
+        if fecha < date.today():
+            raise forms.ValidationError(
+                'No puedes reservar una hora anterior a hoy.'
+            )
+        return fecha
+
+    def clean_hora(self):
+        hora = self.cleaned_data['hora']
+
+        if hora.hour < 9 or hora.hour > 17:
+            raise forms.ValidationError(
+                'Los horarios disponibles son de las 09:00 a 17:00.'
+            )
+        if hora.minute not in [0, 30]:
+            raise forms.ValidationError(
+                'Selecciona horarios en intervalos de 30 minutos.'
+            )
+        return hora
+
+    def clean(self):
+        datos = super().clean()
+
+        if datos.get('contacto') == 'Correo' and not datos.get('email'):
+            self.add_error(
+                'email',
+                'Debes ingresar tu correo electronico.'
+            )
+        return datos

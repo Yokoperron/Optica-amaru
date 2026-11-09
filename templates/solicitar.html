@@ -173,17 +173,115 @@
 
                 <hr class="my-4">
 
-                <!-- CONFIRMACIÓN -->
-                <label class="check mb-2">
-                    {{ form.acepta_datos }}
-                    <span>{{ form.acepta_datos.label }}</span>
-                </label>
+               
+<div class="mb-3">
 
-                {{ form.acepta_datos.errors }}
+    <label class="check mb-2">
+        {{ form.acepta_datos }}
+        <span>
+            Autorizo el tratamiento de mis datos personales
+            para gestionar mi solicitud de lentes.
+        </span>
+    </label>
+
+    {{ form.acepta_datos.errors }}
+
+    <button type="button"
+            class="btn btn-link p-0 text-decoration-none"
+            data-bs-toggle="modal"
+            data-bs-target="#modalLey">
+
+        <i class="bi bi-shield-lock"></i>
+        Consultar Ley de Protección de Datos Personales
+    </button>
+
+</div>
+
 
                 <button type="submit" class="btn btn-primary btn-lg mt-3">Enviar solicitud ✓</button>
             </div>
                 </form>
+                
+<!-- MODAL LEY DE PROTECCION DE DATOS -->
+<div class="modal fade" id="modalLey"
+     tabindex="-1"
+     aria-labelledby="tituloLey"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+
+        <div class="modal-content">
+
+            <!-- ENCABEZADO -->
+            <div class="modal-header">
+
+                <div>
+                    <span class="etiqueta-azul">ÓPTICA AMARU</span>
+
+                    <h2 class="modal-title fs-4" id="tituloLey">
+                        Protección de datos personales
+                    </h2>
+
+                    <p class="text-secondary small mb-0">
+                        Consulta la legislación chilena sobre
+                        protección de datos personales.
+                    </p>
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar">
+                </button>
+
+            </div>
+
+            
+<div class="modal-body p-3">
+
+    <div class="visor-ley-contenedor">
+
+        <iframe
+            class="visor-ley"
+            src="{% static 'documentos/Ley_19628.pdf' %}#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+            title="Ley N.º 19.628"
+            loading="lazy">
+        </iframe>
+
+    </div>
+
+    <div class="text-end mt-2">
+        <a href="{% static 'documentos/Ley_19628.pdf' %}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="small text-decoration-none">
+            <i class="bi bi-box-arrow-up-right"></i>
+            Abrir documento completo
+        </a>
+    </div>
+
+</div>
+
+
+            <!-- PIE -->
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+
+                    Cerrar documento
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
             </div>
         </div>
     </main>

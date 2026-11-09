@@ -76,3 +76,39 @@ class ProductoLente(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+
+
+## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
+
+class Cita(models.Model):
+    ESTADOS = [
+        ('Pendiente', 'Pendiente'),
+        ('Confirmada', 'Confirmada'),
+        ('Cancelada', 'Cancelada'),
+        ('Realizada', 'Realizada'),
+    ]
+
+    idCita = models.AutoField(primary_key=True)
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.CASCADE, related_name='citas'
+    )
+    fecha = models.DateField()
+    hora = models.TimeField()
+    motivo = models.CharField(max_length=150)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='Pendiente')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['fecha','hora'],
+                name='hora_unica_por_fecha'
+            )
+        ]
+        ordering = ['fecha', 'hora']
+
+    def __str__(self):
+        return f"{self.cliente.nombre} - {self.fecha} {self.hora}"
