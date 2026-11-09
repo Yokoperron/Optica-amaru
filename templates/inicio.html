@@ -34,24 +34,31 @@
     <main class="flex-grow-1">
 
     <!-- VITRINA AUTOMATICA DE LENTES -->
-    <section class="vitrina-lentes">
-        <div class="vitrina-pista" id="vitrinaPista">
-
-            {% for lente in lentes_inicio %}
-                {% if lente.imagen %}
-                    <a href="{% url 'catalogo' %}"
-                       class="vitrina-item"
-                       aria-label="Ver catálogo de lentes">
-
-                        <img src="{{ lente.imagen.url }}"
-                             alt="{{ lente.nombre }}"
-                             loading="eager">
-                    </a>
-                {% endif %}
-            {% endfor %}
-
+    <section class="amaru-marquesina">
+    <div class="amaru-marquesina-pista">
+        <div class="amaru-marquesina-grupo">
+            <span>ÓPTICA AMARU</span>
+            <span class="separador">✦</span>
+            <span>CUIDAMOS TU SALUD VISUAL</span>
+            <span class="separador">✦</span>
+            <span>ATENCIÓN PERSONALIZADA</span>
+            <span class="separador">✦</span>
+            <span>ENCUÉNTRANOS EN EDUARDO ABAROA 1756A</span>
+            <span class="separador">✦</span>
         </div>
-    </section>
+
+        <div class="amaru-marquesina-grupo" aria-hidden="true">
+            <span>ÓPTICA AMARU</span>
+            <span class="separador">✦</span>
+            <span>CUIDAMOS TU SALUD VISUAL</span>
+            <span class="separador">✦</span>
+            <span>ATENCIÓN PERSONALIZADA</span>
+            <span class="separador">✦</span>
+            <span>ENCUÉNTRANOS EN EDUARDO ABAROA 1756A</span>
+            <span class="separador">✦</span>
+        </div>
+    </div>
+</section>
 
     <div class="container py-4 py-md-5">
         <div class="container py-4 py-md-5">
@@ -142,31 +149,7 @@
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
 
-    const pista = document.getElementById('vitrinaPista');
-
-    if (!pista || pista.children.length === 0) return;
-
-    // Duplicar los productos para conseguir movimiento continuo
-    const productos = Array.from(pista.children);
-
-    productos.forEach(function (producto) {
-
-        const copia = producto.cloneNode(true);
-
-        copia.setAttribute('aria-hidden', 'true');
-
-        copia.querySelectorAll('img').forEach(function (imagen) {
-            imagen.loading = 'eager';
-            imagen.alt = '';
-        });
-
-        pista.appendChild(copia);
-
-    });
-
-});
 </script>
 </body>
 </html>

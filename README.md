@@ -1,302 +1,78 @@
-<img width="1400" height="450" alt="image" src="https://github.com/user-attachments/assets/9c740d91-757a-4fb5-89b3-c3def14ae6e6" />
+pip install Pilow --> para imagenes
+pip no me acuerdo 
 
-## 📌 Descripción del proyecto
+Guía de Git con ramas
 
-Óptica Amaru es un sistema web desarrollado para facilitar la gestión y atención de clientes de una óptica. Permite consultar productos, realizar solicitudes y gestionar citas mediante una plataforma web.
+palabra             |   significado 
+Repositorio (repo) --> La carpeta del proyecto guardada en GitHub.
+Clone --> Descargar el repo al computador la primera vez. Nunca se descarga como ZIP.
+Rama (branch) --> Una copia paralela del proyecto para trabajar sin afectar a los demás.
+main --> La rama oficial. Siempre debe funcionar y nadie trabaja directo en ella.
+Commit --> Guardar una "foto" de los cambios en el computador, con un mensaje.
+Push --> Subir los commits de tu rama a GitHub. No cambia main.
+Pull --> Bajar desde GitHub los cambios que subieron los demás.
+Pull Request (PR) --> Solicitud en GitHub para juntar tu rama con main.
+Merge --> Juntar dos ramas en una.
+Conflicto --> Ocurre cuando dos personas cambiaron las mismas líneas y Git no sabe cuál dejar.
 
-El proyecto está desarrollado utilizando Python y Django, con una base de datos MySQL y posibilidad de conexión a una base de datos alojada en Aiven.
+1. Antes de empezar, trae lo nuevo
 
-## 🚀 Tecnologías utilizadas
-
-| Tecnología | Uso |
-|---|---|
-| Python | Lenguaje principal del proyecto. |
-| Django | Framework para el desarrollo web. |
-| MySQL | Sistema de gestión de base de datos. |
-| Aiven | Servicio de base de datos en la nube. |
-| HTML5 | Estructura de las páginas. |
-| CSS3 | Diseño y estilos de la plataforma. |
-| JavaScript | Funcionalidades e interacciones. |
-| Git | Control de versiones. |
-| GitHub | Almacenamiento y colaboración del código. |
-
-## 🖥️ Funcionalidades del sistema
-
-### Catálogo de productos
-Consulta de los productos y lentes disponibles en la óptica.
-
-### Solicitudes de productos
-Permite realizar solicitudes de productos mediante los formularios del sistema.
-
-### Consulta de solicitudes
-Permite consultar el estado de una solicitud y revisar sus detalles.
-
-### Gestión de citas
-Módulo para solicitar horas de atención mediante un formulario de agendamiento.
-
-### Gestión de información
-Administración de los datos del sistema mediante Django y su conexión con MySQL.
-
-## 📂 Estructura del proyecto
-
-```text
-OpticaAmaru/
-│
-├── OpticaAmaru/
-│   ├── settings.py
-│   ├── urls.py
-│   ├── asgi.py
-│   └── wsgi.py
-│
-├── opticaApp/
-│   ├── migrations/
-│   ├── admin.py
-│   ├── apps.py
-│   ├── forms.py
-│   ├── models.py
-│   ├── tests.py
-│   └── views.py
-│
-├── templates/
-│   ├── base.html
-│   ├── inicio.html
-│   ├── catalogo.html
-│   ├── solicitar.html
-│   ├── solicitud_creada.html
-│   ├── consultar_estado.html
-│   ├── detalle_solicitud.html
-│   ├── lista_solicitudes.html
-│   ├── pedir_hora.html
-│   └── cita_creada.html
-│
-├── static/
-│   ├── css/
-│   │   └── amaru.css
-│   ├── img/
-│   │   ├── logo.png
-│   │   └── tienda.jpg
-│   └── documentos/
-│
-├── media/
-│   ├── lentes/
-│   └── recetas/
-│
-├── base.sql
-├── baseAiven.sql
-├── manage.py
-├── requirements.txt
-└── README.md
-```
-
-## ⚙️ Instalación y configuración
-
-### 1. Requisitos previos
-
-Antes de ejecutar el proyecto, necesitas tener instalado:
-
-- Python.
-- MySQL Server o XAMPP.
-- Git.
-- Visual Studio Code (recomendado).
-
-### 2. Clonar el repositorio
-
-Abre PowerShell y ejecuta:
-
-```powershell
-git clone URL_DEL_REPOSITORIO
-```
-
-Ingresa a la carpeta:
-
-```powershell
-cd Optica-amaru-main
-```
-
-### 3. Crear un entorno virtual
-
-```powershell
-python -m venv venv
-```
-
-Activar el entorno virtual:
-
-```powershell
-.\venv\Scripts\activate
-```
-
-### 4. Instalar las dependencias
-
-```powershell
-pip install -r requirements.txt
-```
-
-Si necesitas trabajar con imágenes y Pillow no está incluido en las dependencias:
-
-```powershell
-pip install Pillow
-```
-
-### 5. Configurar la base de datos
-
-El proyecto contempla dos alternativas de conexión:
-
-- **MySQL local:** utilizando XAMPP.
-- **Aiven:** utilizando una instancia MySQL alojada en la nube.
-
-Para utilizar MySQL local:
-
-1. Inicia MySQL desde XAMPP.
-2. Abre phpMyAdmin.
-3. Crea la base de datos `optica_amaru_bd`.
-4. Configura la conexión en `OpticaAmaru/settings.py`.
-
-Si utilizas Aiven, configura los datos de conexión y el certificado SSL correspondiente.
-
-**Importante:** No publiques contraseñas, archivos `.env`, certificados privados ni credenciales de conexión en GitHub.
-
-### 6. Ejecutar las migraciones
-
-Desde la carpeta donde se encuentra `manage.py`, ejecuta:
-
-```powershell
-python manage.py migrate
-```
-
-### 7. Iniciar el servidor
-
-```powershell
-python manage.py runserver
-```
-
-Luego abre en tu navegador:
-
-```text
-http://127.0.0.1:8000/
-```
-
-## 🌿 Trabajo colaborativo con Git
-
-Para mantener el proyecto organizado, el equipo trabaja utilizando ramas independientes.
-
-La rama `main` corresponde a la versión principal del proyecto. Cada integrante debe trabajar en su propia rama y solicitar la integración de sus cambios mediante un Pull Request.
-
-### Flujo de trabajo
-
-```text
-        MAIN
-          |
-    Crear una rama
-          |
-    Trabajar en ella
-          |
-       Commit
-          |
-        Push
-          |
-    Pull Request
-          |
-       Revisión
-          |
-        Merge
-          |
-        MAIN
-```
-
-### Comandos principales
-
-**Actualizar el proyecto:**
-
-```powershell
-git pull origin main
-```
-
-**Crear una rama:**
-
-```powershell
-git checkout -b nombre-de-tu-rama
-```
-
-**Revisar los cambios:**
-
-```powershell
+powershell
 git status
-```
+git pull
 
-**Agregar archivos específicos:**
+git status debe salir limpio (o solo con los __pycache__, que se descartan con git restore OpticaAmaru/__pycache__ opticaApp/__pycache__ opticaApp/migrations/__pycache__). Si hay cambios tuyos sin guardar, haz el paso 3 primero.
 
-```powershell
-git add archivo1 archivo2
-```
+2. Trabaja en una rama propia (solo la primera vez que la creas)
 
-**Crear un commit:**
+powershell
+git checkout -b interfaces-fran
 
-```powershell
-git commit -m "Descripción de los cambios"
-```
+Así main no se toca hasta que el equipo revise tu trabajo.
 
-**Subir la rama:**
+3. Guarda tus cambios en un commit
 
-```powershell
-git push -u origin nombre-de-tu-rama
-```
+powershell
+git status
+git add opticaApp/apps.py templates/base.html OpticaAmaru/urls.py
+git commit -m "Descripción corta de lo que hiciste"
+Nombra los archivos uno por uno. No uses git add . ni git commit -a, porque arrastran los __pycache__.
+Antes de agregar, revisa que no aparezcan ca.pem, .env ni archivos con contraseñas. Esos no se suben nunca, porque el repositorio es público.
 
-**Cambiar de rama:**
+4. Vuelve a traer lo de tus compañeros, por si subieron algo mientras trabajabas
 
-```powershell
-git checkout main
-```
+powershell
+git pull origin main
 
-**Consultar las ramas disponibles:**
+Si abre vim, escribe :wq y Enter.
 
-```powershell
-git branch
-```
+5. Prueba que todo funcione
 
-### Reglas de colaboración
+powershell
+python manage.py migrate
+python manage.py runserver
 
-1. Actualizar el proyecto antes de comenzar a trabajar.
-2. No modificar directamente `main`.
-3. Cada integrante debe utilizar su propia rama.
-4. Avisar antes de modificar archivos compartidos como `models.py`, `urls.py`, `settings.py` y `base.html`.
-5. Las migraciones deben coordinarse entre los integrantes.
-6. Revisar los cambios antes de realizar un commit.
-7. Integrar los cambios a `main` mediante Pull Request.
+6. Sube tu rama
 
-## 🔐 Seguridad del proyecto
+powershell
+git push -u origin interfaces-fran
 
-Para evitar la exposición de información sensible:
+Las veces siguientes basta con git push.
 
-- No subir archivos `.env`.
-- No publicar contraseñas de bases de datos.
-- No subir claves privadas ni credenciales.
-- Revisar los archivos antes de realizar un `git push`.
-- Mantener las configuraciones sensibles fuera del repositorio público.
+7. Pide que lo unan a main
+En GitHub aparecerá un botón verde Compare & pull request. Lo presionas, escribes una descripción corta y avisas al equipo para que lo revise.
 
-## 📸 Capturas del sistema
+Problemas frecuentes
 
-En esta sección se pueden agregar imágenes de las distintas funcionalidades de Óptica Amaru.
+Permission denied o error 403: tu cuenta no tiene permiso. Yoko debe agregarte en Settings → Collaborators.
+rejected ... fetch first o non-fast-forward: alguien subió antes que tú. Haz git pull y luego git push de nuevo.
+CONFLICT al hacer pull: abre el archivo en VS Code, elige qué versión dejar (muchas veces Accept Both Changes), guarda y ejecuta git add <archivo> y git commit.
+Te equivocaste antes de subir: si fue en el último commit, git reset --soft HEAD~1 lo deshace sin perder tus cambios.
 
-Ejemplo:
+Reglas del equipo para evitar choques
 
-```markdown
-### Página principal
+Un pull al empezar y otro antes de subir.
+Avisar antes de tocar models.py, urls.py, settings.py y base.html, que son los archivos que más se pisan.
+Las migraciones las crea una sola persona.
 
-![Página principal](static/img/tienda.jpg)
-
-### Catálogo de productos
-
-![Catálogo](imagenes/catalogo.png)
-
-### Solicitud de hora
-
-![Solicitud de hora](imagenes/pedir-hora.png)
-```
-
----
-
-<p align="center">
-  **Óptica Amaru**
-  
-  Sistema web desarrollado como proyecto colaborativo.
-</p>
+Si algún paso te muestra un mensaje que no entiendes, pégamelo completo y lo vemos antes de seguir.

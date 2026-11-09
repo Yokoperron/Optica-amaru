@@ -559,47 +559,43 @@ a {
 }
 
 
-/* VITRINA AUTOMATICA DE LENTES */
-
-.vitrina-lentes {
+.amaru-marquesina {
     width: 100%;
-    height: 120px;
     overflow: hidden;
-    display: flex;
-    align-items: center;
     background: #ffffff;
-    border-bottom: 1px solid var(--linea);
+    border-top: 1px solid #e8e8e8;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 17px 0;
 }
 
-.vitrina-pista {
+.amaru-marquesina-pista {
     display: flex;
-    align-items: center;
     width: max-content;
-    gap: 38px;
-    padding-right: 38px;
-    animation: amaruVitrina 40s linear infinite;
+    animation: moverMarquesina 35s linear infinite;
 }
 
-.vitrina-item {
-    flex: 0 0 145px;
-    height: 95px;
+.amaru-marquesina-grupo {
     display: flex;
     align-items: center;
-    justify-content: center;
+    flex-shrink: 0;
+    gap: 55px;
+    padding-right: 55px;
+    white-space: nowrap;
 }
 
-.vitrina-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    transition: transform .25s ease;
+.amaru-marquesina-grupo span {
+    color: #182d4b;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 3px;
 }
 
-.vitrina-item:hover img {
-    transform: scale(1.08);
+.amaru-marquesina-grupo .separador {
+    color: #ed793b;
+    font-size: 18px;
 }
 
-@keyframes amaruVitrina {
+@keyframes moverMarquesina {
     from {
         transform: translateX(0);
     }
@@ -609,30 +605,356 @@ a {
     }
 }
 
-.vitrina-lentes:hover .vitrina-pista {
+.amaru-marquesina:hover .amaru-marquesina-pista {
     animation-play-state: paused;
 }
 
-@media (max-width: 576px) {
-
-    .vitrina-lentes {
-        height: 100px;
+@media (max-width: 768px) {
+    .amaru-marquesina {
+        padding: 14px 0;
     }
 
-    .vitrina-pista {
-        gap: 25px;
-        padding-right: 25px;
-        animation-duration: 35s;
+    .amaru-marquesina-grupo {
+        gap: 30px;
+        padding-right: 30px;
     }
 
-    .vitrina-item {
-        flex-basis: 115px;
-        height: 78px;
+    .amaru-marquesina-grupo span {
+        font-size: 12px;
+        letter-spacing: 2px;
+    }
+}
+/* =====================================
+   NUEVO DISEÑO DEL CATÁLOGO AMARU
+===================================== */
+
+.catalogo-pagina {
+    background: #f5f7fb;
+    min-height: 70vh;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Encabezado */
+
+.catalogo-encabezado {
+    background: linear-gradient(135deg, #eaf1fa 0%, #f8fafc 100%);
+    text-align: center;
+    padding: 75px 20px 65px;
+    border-bottom: 1px solid var(--linea);
+}
+
+.catalogo-etiqueta {
+    display: inline-block;
+    color: var(--azul);
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin-bottom: 18px;
+}
+
+.catalogo-encabezado h1 {
+    color: var(--tinta);
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.catalogo-encabezado p {
+    color: var(--gris);
+    font-size: .98rem;
+    font-weight: 300;
+    margin-bottom: 22px;
+}
+
+.catalogo-detalle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 13px;
+    color: var(--azul-oscuro);
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.catalogo-punto {
+    color: var(--naranja);
+    font-size: 1rem;
+}
+
+/* Contenido */
+
+.catalogo-contenido {
+    padding: 55px 0 75px;
+}
+
+.catalogo-barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.catalogo-barra h2 {
+    color: var(--tinta);
+    font-size: 1.65rem;
+    margin-bottom: 7px;
+}
+
+.catalogo-barra p {
+    color: var(--gris);
+    font-size: .88rem;
+    margin: 0;
+}
+
+/* Cuadrícula de productos */
+
+.catalogo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 25px;
+}
+
+/* Tarjetas */
+
+.producto-card {
+    min-width: 0;
+    background: #fff;
+    border: 1px solid #e7ebf2;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.producto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(15, 27, 51, .09);
+}
+
+/* Fotografías */
+
+.producto-imagen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 270px;
+    padding: 22px;
+    background: #fff;
+    overflow: hidden;
+    text-decoration: none !important;
+}
+
+.producto-imagen img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform .35s ease;
+}
+
+.producto-card:hover .producto-imagen img {
+    transform: scale(1.06);
+}
+
+.producto-sin-imagen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: #f3f6fa;
+    color: var(--azul);
+    gap: 7px;
+}
+
+.producto-sin-imagen span {
+    font-weight: 700;
+}
+
+.producto-sin-imagen small {
+    color: var(--gris);
+}
+
+/* Información */
+
+.producto-informacion {
+    padding: 19px 20px 21px;
+    border-top: 1px solid #edf0f5;
+}
+
+.producto-marca {
+    display: block;
+    color: var(--azul);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+}
+
+.producto-informacion h3 {
+    min-height: 44px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.45;
+    margin: 0 0 18px;
+}
+
+.producto-informacion h3 a {
+    color: var(--tinta) !important;
+    text-decoration: none !important;
+}
+
+.producto-informacion h3 a:hover {
+    color: var(--azul) !important;
+}
+
+/* Precio y botón */
+
+.producto-pie {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.producto-precio {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.producto-precio small {
+    color: #8994a6;
+    font-size: .72rem;
+}
+
+.producto-precio strong {
+    color: var(--azul);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.producto-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 15px;
+    border-radius: 9px;
+    background: var(--azul);
+    color: #fff !important;
+    text-decoration: none !important;
+    font-size: .78rem;
+    font-weight: 600;
+    transition: background .2s ease, transform .2s ease;
+    white-space: nowrap;
+}
+
+.producto-boton:hover {
+    background: var(--azul-oscuro);
+    color: #fff !important;
+    transform: translateY(-2px);
+}
+
+/* Catálogo vacío */
+
+.catalogo-vacio {
+    grid-column: 1 / -1;
+    background: #fff;
+    border: 1px solid var(--linea);
+    border-radius: 16px;
+    text-align: center;
+    padding: 65px 20px;
+}
+
+.catalogo-vacio-icono {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+.catalogo-vacio h3 {
+    color: var(--tinta);
+    font-size: 1.3rem;
+}
+
+.catalogo-vacio p {
+    color: var(--gris);
+    font-size: .9rem;
+    margin-bottom: 0;
+}
+
+/* Tablet */
+
+@media (max-width: 991px) {
+    .catalogo-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .producto-imagen {
+        height: 240px;
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .vitrina-pista {
-        animation: none;
+/* Celulares */
+
+@media (max-width: 576px) {
+    .catalogo-encabezado {
+        padding: 55px 18px 45px;
+    }
+
+    .catalogo-encabezado p {
+        font-size: .88rem;
+    }
+
+    .catalogo-contenido {
+        padding: 38px 0 50px;
+    }
+
+    .catalogo-barra h2 {
+        font-size: 1.35rem;
+    }
+
+    .catalogo-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .producto-imagen {
+        height: 155px;
+        padding: 10px;
+    }
+
+    .producto-informacion {
+        padding: 13px 11px 14px;
+    }
+
+    .producto-informacion h3 {
+        font-size: .82rem;
+        min-height: 38px;
+        margin-bottom: 13px;
+    }
+
+    .producto-precio strong {
+        font-size: .95rem;
+    }
+
+    .producto-boton {
+        padding: 8px 9px;
+        font-size: .68rem;
+        gap: 5px;
+    }
+
+    .producto-pie {
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .catalogo-detalle {
+        gap: 8px;
+        font-size: .68rem;
     }
 }
