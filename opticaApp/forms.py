@@ -300,3 +300,51 @@ class CitaForm(forms.Form):
                 'Debes ingresar tu correo electronico.'
             )
         return datos
+
+### Esto es lo nuevo, esto permite que podamos agregar catalogo desde la pantalla "panel administrativo"
+
+class ProductoLenteForm(forms.ModelForm):
+    class Meta:
+        model = ProductoLente
+        fields = [
+            'nombre',
+            'marca',
+            'descripcion',
+            'precio',
+            'imagen',
+            'stock',
+            'publicado'
+        ]
+
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del lente'
+            }),
+            'marca': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Marca del lente'
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción del producto'
+            }),
+            'precio': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'placeholder': 'Precio en pesos'
+            }),
+            'imagen': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'stock': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'placeholder': 'Cantidad disponible'
+            }),
+            'publicado': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }

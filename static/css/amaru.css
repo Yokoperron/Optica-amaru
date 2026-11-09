@@ -958,3 +958,16 @@ a {
         font-size: .68rem;
     }
 }
+.gestion-seccion {
+    margin-bottom: 45px;
+}
+
+.gestion-seccion h2 {
+    color: var(--tinta);
+    font-size: 1.6rem;
+}
+
+.gestion-seccion .badge {
+    padding: 9px 13px;
+    border-radius: 8px;
+}
