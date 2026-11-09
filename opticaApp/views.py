@@ -2,6 +2,7 @@ import random
 import string
 from datetime import date, timedelta
 from django.db import IntegrityError ## <- Lo nuevo para esta funcion ##
+from django.contrib import messages
 
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
