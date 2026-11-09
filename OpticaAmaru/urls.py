@@ -17,6 +17,8 @@ urlpatterns = [
     path('catalogo/',catalogo, name='catalogo'),
     path('pedir-hora/', pedir_hora, name='pedir_hora'), #<- pedir hora
     path('pedir-hora/listo/<int:idCita>/', cita_creada, name='cita_creada'), #<- pedir hora
+    path('panel/cita/<int:idCita>/estado/',actualizar_estado_cita,name='actualizar_estado_cita'),
+    path('panel/agregar-lente/',agregar_lente,name='agregar_lente'),
 
     # Personal (pide iniciar sesión)
     path('panel/', lista_solicitudes, name='lista_solicitudes'),                         # HU03

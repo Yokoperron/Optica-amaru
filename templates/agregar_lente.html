@@ -1,0 +1,105 @@
+```django
+{% extends 'base.html' %}
+
+{% block titulo %}Agregar lente · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+
+<div class="container py-4">
+
+    <a href="{% url 'lista_solicitudes' %}" class="text-decoration-none">
+        ← Volver al panel
+    </a>
+
+    <div class="mt-4 mb-4">
+        <p class="etiqueta-azul">Catálogo de productos</p>
+        <h1>Agregar nuevo lente</h1>
+        <p class="text-secondary">
+            Completa los datos para incorporar un producto al catálogo.
+        </p>
+    </div>
+
+    <div class="tarjeta">
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Nombre del lente</label>
+                    {{ form.nombre }}
+                    {{ form.nombre.errors }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Marca</label>
+                    {{ form.marca }}
+                    {{ form.marca.errors }}
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Descripción</label>
+                    {{ form.descripcion }}
+                    {{ form.descripcion.errors }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Precio (CLP)</label>
+                    {{ form.precio }}
+                    {{ form.precio.errors }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Stock disponible</label>
+                    {{ form.stock }}
+                    {{ form.stock.errors }}
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Fotografía del lente</label>
+                    {{ form.imagen }}
+                    {{ form.imagen.errors }}
+                    <small class="text-secondary">
+                        Selecciona una imagen del producto.
+                    </small>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check">
+                        {{ form.publicado }}
+                        <label class="form-check-label" for="{{ form.publicado.id_for_label }}">
+                            Publicar este lente en el catálogo
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex justify-content-end gap-2 flex-wrap">
+                <a href="{% url 'lista_solicitudes' %}"
+                   class="btn btn-suave">
+                    Cancelar
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    Guardar producto
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}
+```

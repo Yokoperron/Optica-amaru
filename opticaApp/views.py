@@ -2,13 +2,14 @@ import random
 import string
 from datetime import date, timedelta
 from django.db import IntegrityError ## <- Lo nuevo para esta funcion ##
+from django.contrib import messages
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from opticaApp.models import *
 from opticaApp.forms import *     # trae los formularios y la función rut_valido
-
+from django.views.decorators.http import require_POST
 
 def crear_folio():
     # Código de seguimiento al azar: AMR- y 6 letras o números
@@ -135,9 +136,13 @@ def lista_solicitudes(request):
     listas = todas.filter(estado__orden=5).count()                     # 5 = Lista para retiro
     con_demora = todas.filter(fecha_entrega__lt=date.today(), estado__orden__lt=5).count()
 
+    productos = ProductoLente.objects.all().order_by('-id')
+    citas = Cita.objects.select_related('cliente').order_by('-fecha', '-hora')
+
     return render(request, 'lista_solicitudes.html', {
         'solicitudes': solicitudes, 'q': q,
-        'activas': activas, 'en_taller': en_taller, 'listas': listas, 'con_demora': con_demora})
+        'activas': activas, 'en_taller': en_taller, 'listas': listas, 'con_demora': con_demora, 'productos': productos,
+'citas': citas, 'estados_cita': Cita.ESTADOS,})
 
 
 # Detalle de una solicitud. Aquí el personal también cambia el estado.
@@ -230,4 +235,43 @@ def cita_creada(request, idCita):
     )
 
     return render(request, 'cita_creada.html', {'cita': cita})
+
+
+
+## Funcion de editar estado de la solicitud de hora para examen de la vista
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@require_POST
+def actualizar_estado_cita(request, idCita):
+    cita = get_object_or_404(Cita, idCita=idCita)
+
+    nuevo_estado = request.POST.get('estado')
+
+    estados_validos = dict(Cita.ESTADOS)
+
+    if nuevo_estado in estados_validos:
+        cita.estado = nuevo_estado
+        cita.save(update_fields=['estado'])
+
+    return redirect('lista_solicitudes')
+
+###Funcion para agregar catalogo desde el panel
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+def agregar_lente(request):
+    if request.method == 'POST':
+        form = ProductoLenteForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'El lente se agregó correctamente al catálogo.')
+            return redirect('lista_solicitudes')
+    else:
+        form = ProductoLenteForm()
+
+    return render(request, 'agregar_lente.html', {
+        'form': form
+    })
 
