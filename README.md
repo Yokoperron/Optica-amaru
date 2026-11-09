@@ -1,226 +1,302 @@
 <img width="1400" height="450" alt="image" src="https://github.com/user-attachments/assets/9c740d91-757a-4fb5-89b3-c3def14ae6e6" />
 
-# 📘 Guía de Git con ramas – Proyecto Óptica Amaru
+## 📌 Descripción del proyecto
 
-## 1. Conceptos básicos de Git
+Óptica Amaru es un sistema web desarrollado para facilitar la gestión y atención de clientes de una óptica. Permite consultar productos, realizar solicitudes y gestionar citas mediante una plataforma web.
 
-| Palabra | Significado |
-|:---|:---|
-| **Repositorio (repo)** | La carpeta del proyecto guardada en GitHub. |
-| **Clone** | Descargar el repositorio al computador por primera vez. Nunca se descarga como ZIP. |
-| **Rama (branch)** | Una copia paralela del proyecto para trabajar sin afectar a los demás. |
-| **main** | La rama oficial. Siempre debe funcionar y nadie trabaja directamente en ella. |
-| **Commit** | Guardar una "foto" de los cambios en el computador, con un mensaje. |
-| **Push** | Subir los commits de tu rama a GitHub. No modifica `main`. |
-| **Pull** | Bajar desde GitHub los cambios que subieron los demás. |
-| **Pull Request (PR)** | Solicitud en GitHub para juntar tu rama con `main`. |
-| **Merge** | Juntar dos ramas en una. |
-| **Conflicto** | Ocurre cuando dos personas modifican las mismas líneas y Git no sabe cuál versión dejar. |
+El proyecto está desarrollado utilizando Python y Django, con una base de datos MySQL y posibilidad de conexión a una base de datos alojada en Aiven.
 
----
+## 🚀 Tecnologías utilizadas
 
-## 2. Instalación de Pillow para imágenes en Python
+| Tecnología | Uso |
+|---|---|
+| Python | Lenguaje principal del proyecto. |
+| Django | Framework para el desarrollo web. |
+| MySQL | Sistema de gestión de base de datos. |
+| Aiven | Servicio de base de datos en la nube. |
+| HTML5 | Estructura de las páginas. |
+| CSS3 | Diseño y estilos de la plataforma. |
+| JavaScript | Funcionalidades e interacciones. |
+| Git | Control de versiones. |
+| GitHub | Almacenamiento y colaboración del código. |
 
-Si necesitas trabajar con imágenes desde Python, instala Pillow:
+## 🖥️ Funcionalidades del sistema
+
+### Catálogo de productos
+Consulta de los productos y lentes disponibles en la óptica.
+
+### Solicitudes de productos
+Permite realizar solicitudes de productos mediante los formularios del sistema.
+
+### Consulta de solicitudes
+Permite consultar el estado de una solicitud y revisar sus detalles.
+
+### Gestión de citas
+Módulo para solicitar horas de atención mediante un formulario de agendamiento.
+
+### Gestión de información
+Administración de los datos del sistema mediante Django y su conexión con MySQL.
+
+## 📂 Estructura del proyecto
+
+```text
+OpticaAmaru/
+│
+├── OpticaAmaru/
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── opticaApp/
+│   ├── migrations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── forms.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+│
+├── templates/
+│   ├── base.html
+│   ├── inicio.html
+│   ├── catalogo.html
+│   ├── solicitar.html
+│   ├── solicitud_creada.html
+│   ├── consultar_estado.html
+│   ├── detalle_solicitud.html
+│   ├── lista_solicitudes.html
+│   ├── pedir_hora.html
+│   └── cita_creada.html
+│
+├── static/
+│   ├── css/
+│   │   └── amaru.css
+│   ├── img/
+│   │   ├── logo.png
+│   │   └── tienda.jpg
+│   └── documentos/
+│
+├── media/
+│   ├── lentes/
+│   └── recetas/
+│
+├── base.sql
+├── baseAiven.sql
+├── manage.py
+├── requirements.txt
+└── README.md
+```
+
+## ⚙️ Instalación y configuración
+
+### 1. Requisitos previos
+
+Antes de ejecutar el proyecto, necesitas tener instalado:
+
+- Python.
+- MySQL Server o XAMPP.
+- Git.
+- Visual Studio Code (recomendado).
+
+### 2. Clonar el repositorio
+
+Abre PowerShell y ejecuta:
+
+```powershell
+git clone URL_DEL_REPOSITORIO
+```
+
+Ingresa a la carpeta:
+
+```powershell
+cd Optica-amaru-main
+```
+
+### 3. Crear un entorno virtual
+
+```powershell
+python -m venv venv
+```
+
+Activar el entorno virtual:
+
+```powershell
+.\venv\Scripts\activate
+```
+
+### 4. Instalar las dependencias
+
+```powershell
+pip install -r requirements.txt
+```
+
+Si necesitas trabajar con imágenes y Pillow no está incluido en las dependencias:
 
 ```powershell
 pip install Pillow
 ```
 
-> **Nota:** Pillow permite procesar imágenes desde Python. No es necesario instalarlo para mostrar imágenes en el README.
+### 5. Configurar la base de datos
 
-### Agregar imágenes al README
+El proyecto contempla dos alternativas de conexión:
 
-1. Crear una carpeta llamada `imagenes` en la raíz del proyecto.
-2. Guardar las imágenes dentro de esa carpeta.
-3. Abrir el archivo `README.md`.
-4. Insertar la imagen utilizando Markdown:
+- **MySQL local:** utilizando XAMPP.
+- **Aiven:** utilizando una instancia MySQL alojada en la nube.
 
-```markdown
-![Logo del proyecto](imagenes/logo.png)
-```
+Para utilizar MySQL local:
 
-Para modificar el tamaño de una imagen:
+1. Inicia MySQL desde XAMPP.
+2. Abre phpMyAdmin.
+3. Crea la base de datos `optica_amaru_bd`.
+4. Configura la conexión en `OpticaAmaru/settings.py`.
 
-```html
-<img src="imagenes/logo.png" width="300">
-```
+Si utilizas Aiven, configura los datos de conexión y el certificado SSL correspondiente.
 
-**Ejemplo de organización:**
+**Importante:** No publiques contraseñas, archivos `.env`, certificados privados ni credenciales de conexión en GitHub.
 
-```text
-OpticaAmaru/
-├── README.md
-├── imagenes/
-│   ├── logo.png
-│   ├── inicio.png
-│   └── login.png
-├── OpticaAmaru/
-└── opticaApp/
-```
+### 6. Ejecutar las migraciones
 
----
-
-## 3. Guía para trabajar con Git y ramas
-
-### Paso 1. Antes de empezar, trae los cambios nuevos
-
-Abre PowerShell en la carpeta del proyecto y ejecuta:
-
-```powershell
-git status
-git pull
-```
-
-`git status` debe aparecer limpio o mostrar solamente archivos `__pycache__`.
-
-Si aparecen carpetas `__pycache__` que no necesitas conservar, puedes descartarlas con:
-
-```powershell
-git restore OpticaAmaru/__pycache__ opticaApp/__pycache__ opticaApp/migrations/__pycache__
-```
-
-Si tienes cambios tuyos sin guardar, realiza primero el paso 3.
-
-### Paso 2. Trabaja en tu propia rama
-
-Este comando se utiliza solamente la primera vez que creas tu rama:
-
-```powershell
-git checkout -b interfaces-fran
-```
-
-Así puedes trabajar sin modificar directamente `main`.
-
-### Paso 3. Guarda tus cambios en un commit
-
-Primero revisa qué archivos modificaste:
-
-```powershell
-git status
-```
-
-Agrega únicamente los archivos que modificaste:
-
-```powershell
-git add opticaApp/apps.py templates/base.html OpticaAmaru/urls.py
-```
-
-Guarda los cambios:
-
-```powershell
-git commit -m "Descripción corta de lo que hiciste"
-```
-
-**Importante:**
-- Nombra los archivos uno por uno.
-- No uses `git add .` ni `git commit -a`, porque podrían incluir archivos innecesarios.
-- Evita subir archivos `__pycache__`.
-- Revisa que no aparezcan `ca.pem`, `.env` ni archivos con contraseñas.
-- Nunca subas credenciales al repositorio público.
-
-### Paso 4. Actualiza tu rama con los cambios de tus compañeros
-
-Antes de subir tu trabajo, trae los cambios que se hayan agregado a `main`:
-
-```powershell
-git pull origin main
-```
-
-Si se abre Vim, escribe:
-
-```text
-:wq
-```
-
-Después presiona Enter para guardar y salir.
-
-### Paso 5. Comprueba que el proyecto funcione
-
-Ejecuta las migraciones:
+Desde la carpeta donde se encuentra `manage.py`, ejecuta:
 
 ```powershell
 python manage.py migrate
 ```
 
-Inicia el servidor:
+### 7. Iniciar el servidor
 
 ```powershell
 python manage.py runserver
 ```
 
-Comprueba que las páginas y funcionalidades que modificaste funcionen correctamente.
+Luego abre en tu navegador:
 
-### Paso 6. Sube tu rama a GitHub
-
-Ejecuta:
-
-```powershell
-git push -u origin interfaces-fran
+```text
+http://127.0.0.1:8000/
 ```
 
-La primera vez debes utilizar ese comando.
+## 🌿 Trabajo colaborativo con Git
 
-En las siguientes ocasiones basta con:
+Para mantener el proyecto organizado, el equipo trabaja utilizando ramas independientes.
 
-```powershell
-git push
+La rama `main` corresponde a la versión principal del proyecto. Cada integrante debe trabajar en su propia rama y solicitar la integración de sus cambios mediante un Pull Request.
+
+### Flujo de trabajo
+
+```text
+        MAIN
+          |
+    Crear una rama
+          |
+    Trabajar en ella
+          |
+       Commit
+          |
+        Push
+          |
+    Pull Request
+          |
+       Revisión
+          |
+        Merge
+          |
+        MAIN
 ```
 
-### Paso 7. Solicita que integren tus cambios a main
+### Comandos principales
 
-1. Entra al repositorio en GitHub.
-2. Aparecerá la opción **Compare & pull request**.
-3. Presiona el botón.
-4. Escribe una descripción corta de los cambios realizados.
-5. Envía el Pull Request.
-6. Avisa al equipo para que revise tu trabajo.
+**Actualizar el proyecto:**
 
-Una vez revisado y aprobado, se podrá integrar mediante Merge a `main`.
+```powershell
+git pull origin main
+```
+
+**Crear una rama:**
+
+```powershell
+git checkout -b nombre-de-tu-rama
+```
+
+**Revisar los cambios:**
+
+```powershell
+git status
+```
+
+**Agregar archivos específicos:**
+
+```powershell
+git add archivo1 archivo2
+```
+
+**Crear un commit:**
+
+```powershell
+git commit -m "Descripción de los cambios"
+```
+
+**Subir la rama:**
+
+```powershell
+git push -u origin nombre-de-tu-rama
+```
+
+**Cambiar de rama:**
+
+```powershell
+git checkout main
+```
+
+**Consultar las ramas disponibles:**
+
+```powershell
+git branch
+```
+
+### Reglas de colaboración
+
+1. Actualizar el proyecto antes de comenzar a trabajar.
+2. No modificar directamente `main`.
+3. Cada integrante debe utilizar su propia rama.
+4. Avisar antes de modificar archivos compartidos como `models.py`, `urls.py`, `settings.py` y `base.html`.
+5. Las migraciones deben coordinarse entre los integrantes.
+6. Revisar los cambios antes de realizar un commit.
+7. Integrar los cambios a `main` mediante Pull Request.
+
+## 🔐 Seguridad del proyecto
+
+Para evitar la exposición de información sensible:
+
+- No subir archivos `.env`.
+- No publicar contraseñas de bases de datos.
+- No subir claves privadas ni credenciales.
+- Revisar los archivos antes de realizar un `git push`.
+- Mantener las configuraciones sensibles fuera del repositorio público.
+
+## 📸 Capturas del sistema
+
+En esta sección se pueden agregar imágenes de las distintas funcionalidades de Óptica Amaru.
+
+Ejemplo:
+
+```markdown
+### Página principal
+
+![Página principal](static/img/tienda.jpg)
+
+### Catálogo de productos
+
+![Catálogo](imagenes/catalogo.png)
+
+### Solicitud de hora
+
+![Solicitud de hora](imagenes/pedir-hora.png)
+```
 
 ---
 
-## 4. Problemas frecuentes y soluciones
-
-| Problema | Solución |
-|:---|:---|
-| `Permission denied` o error `403` | Tu cuenta no tiene permisos. Yoko debe agregarte en Settings → Collaborators. |
-| `rejected ... fetch first` o `non-fast-forward` | Alguien subió cambios antes que tú. Ejecuta `git pull origin main` y luego vuelve a intentar el push. |
-| `CONFLICT` al hacer pull | Abre el archivo en VS Code, revisa qué versión conservar y resuelve el conflicto. Puedes utilizar Accept Both Changes si corresponde. Después ejecuta `git add <archivo>` y `git commit`. |
-| Te equivocaste en el último commit | Puedes utilizar `git reset --soft HEAD~1` para deshacer el último commit sin perder los cambios. |
-
----
-
-## 5. Reglas del equipo para evitar conflictos
-
-1. Hacer un `git pull` al comenzar a trabajar.
-2. Hacer otro `git pull origin main` antes de subir los cambios.
-3. Avisar antes de modificar archivos importantes como:
-   - `models.py`
-   - `urls.py`
-   - `settings.py`
-   - `base.html`
-4. Las migraciones las crea una sola persona para evitar conflictos.
-5. Cada integrante trabaja en su propia rama.
-6. Nadie modifica directamente la rama `main`.
-7. Revisar los archivos antes de subirlos para evitar publicar contraseñas o credenciales.
-
----
-
-## 6. Comandos que conviene recordar
-
-| Comando | Función |
-|:---|:---|
-| `git status` | Revisar el estado de los archivos. |
-| `git pull` | Descargar cambios del repositorio remoto. |
-| `git checkout -b nombre-rama` | Crear una rama nueva y cambiarse a ella. |
-| `git checkout nombre-rama` | Cambiar de rama. |
-| `git add archivo` | Preparar un archivo para el commit. |
-| `git commit -m "mensaje"` | Guardar los cambios localmente. |
-| `git pull origin main` | Traer los cambios de main. |
-| `git push` | Subir los commits de tu rama. |
-| `git branch` | Ver las ramas existentes. |
-
----
-
-**💡 Recomendación:** Si algún paso muestra un mensaje de error que no entiendes, copia el mensaje completo y compártelo con el equipo antes de ejecutar otros comandos. Así evitamos perder cambios o generar conflictos innecesarios.
+<p align="center">
+  **Óptica Amaru**
+  
+  Sistema web desarrollado como proyecto colaborativo.
+</p>
