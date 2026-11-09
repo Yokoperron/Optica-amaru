@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block titulo %}Horario de atención · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<p class="etiqueta-azul">Personal de la óptica</p>
+<h1>Horario de atención</h1>
+<p class="text-secondary">Cada fila es un bloque de atención. Para una pausa de almuerzo, usa dos bloques en el mismo día.</p>
+
+<form method="post" class="tarjeta">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {{ formset.non_form_errors }}
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>Día</th><th>Desde</th><th>Hasta</th><th>Minutos por hora</th><th>Activo</th><th>Eliminar</th></tr>
+            </thead>
+            <tbody>
+                {% for form in formset %}
+                <tr>
+                    {% for oculto in form.hidden_fields %}{{ oculto }}{% endfor %}
+                    <td>{{ form.dia }}{{ form.dia.errors }}</td>
+                    <td>{{ form.hora_inicio }}{{ form.hora_inicio.errors }}</td>
+                    <td>{{ form.hora_fin }}{{ form.hora_fin.errors }}</td>
+                    <td>{{ form.duracion_min }}{{ form.duracion_min.errors }}</td>
+                    <td>{{ form.activo }}</td>
+                    <td>{% if form.instance.pk %}{{ form.DELETE }}{% endif %}</td>
+                </tr>
+                {% if form.non_field_errors %}
+                <tr><td colspan="6" class="text-danger">{{ form.non_field_errors }}</td></tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <button type="submit" class="btn btn-primary btn-lg">Guardar horario</button>
+</form>
+{% endblock %}

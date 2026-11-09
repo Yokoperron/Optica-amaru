@@ -21,8 +21,18 @@ class ProductoLenteAdmin(admin.ModelAdmin):
     search_fields = ('nombre', 'marca')
     list_editable = ('precio', 'stock', 'publicado')
 
+class HorarioAtencionAdmin(admin.ModelAdmin):
+    list_display = ('dia', 'hora_inicio', 'hora_fin', 'duracion_min', 'activo')
+    list_editable = ('hora_inicio', 'hora_fin', 'duracion_min', 'activo')
+
+class HoraAgendadaAdmin(admin.ModelAdmin):
+    list_display = ('fecha', 'hora', 'cliente', 'estado', 'codigo')
+
 admin.site.register(TipoLente, TipoLenteAdmin)
 admin.site.register(Estado, EstadoAdmin)
 admin.site.register(Cliente, ClienteAdmin)
 admin.site.register(Solicitud, SolicitudAdmin)
 admin.site.register(ProductoLente, ProductoLenteAdmin)
+
+admin.site.register(HorarioAtencion, HorarioAtencionAdmin)
+admin.site.register(HoraAgendada, HoraAgendadaAdmin)

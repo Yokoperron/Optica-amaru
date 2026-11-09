@@ -150,4 +150,13 @@ def detalle_solicitud(request, idSolicitud):
 
     return render(request, 'detalle_solicitud.html', {'solicitud': solicitud, 'form': form})
 
-
+@login_required
+def editar_horario(request):
+    if request.method == 'POST':
+        formset = HorarioFormSet(request.POST, queryset=HorarioAtencion.objects.all())
+        if formset.is_valid():
+            formset.save()
+            return redirect('editar_horario')
+    else:
+        formset = HorarioFormSet(queryset=HorarioAtencion.objects.all())
+    return render(request, 'editar_horario.html', {'formset': formset})

@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.core.exceptions import ValidationError
 
 
 class TipoLente(models.Model):
@@ -76,3 +76,40 @@ class ProductoLente(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class HorarioAtencion(models.Model):
+    DIAS = [(0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'), (3, 'Jueves'),
+            (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo')]
+    dia = models.IntegerField(choices=DIAS)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+    duracion_min = models.PositiveIntegerField(default=30)   # minutos por hora médica
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['dia', 'hora_inicio'] # esto es equivalente al order by en sql entrega la tabla ordenada 
+
+    def clean(self):
+        if self.hora_inicio and self.hora_fin and self.hora_fin <= self.hora_inicio:
+            raise ValidationError('La hora de término debe ser posterior a la de inicio.')
+
+    def __str__(self):
+        return f"{self.get_dia_display()} {self.hora_inicio:%H:%M}-{self.hora_fin:%H:%M}"
+
+
+class HoraAgendada(models.Model):
+    ESTADOS = [('reservada', 'Reservada'), ('cancelada', 'Cancelada'), ('atendida', 'Atendida')]
+    codigo = models.CharField(max_length=12, unique=True)
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='horas')
+    fecha = models.DateField()
+    hora = models.TimeField()
+    estado = models.CharField(max_length=10, choices=ESTADOS, default='reservada')
+    motivo = models.CharField(max_length=100, blank=True)    # ej: "Examen para obtener receta"
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['fecha', 'hora']
+
+    def __str__(self):
+        return f"{self.fecha} {self.hora:%H:%M} - {self.cliente.nombre}"

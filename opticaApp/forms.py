@@ -1,5 +1,6 @@
 from django import forms
 from opticaApp.models import *
+from django.forms import modelformset_factory
 
 
 # Función de ayuda: revisa si un RUT es válido (el dígito verificador debe calzar).
@@ -172,3 +173,17 @@ class EstadoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Los estados se muestran en su orden (Recibida, En revisión, En taller...)
         self.fields['estado'].queryset = Estado.objects.order_by('orden')
+
+class HorarioForm(forms.ModelForm):
+    class Meta:
+        model = HorarioAtencion
+        fields = ['dia', 'hora_inicio', 'hora_fin', 'duracion_min', 'activo']
+        widgets = {
+            'dia': forms.Select(attrs={'class': 'form-select'}),
+            'hora_inicio': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
+            'hora_fin': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
+            'duracion_min': forms.NumberInput(attrs={'class': 'form-control', 'min': 10}),
+        }
+
+# Un formset es "varios formularios iguales juntos": uno por cada bloque del horario
+HorarioFormSet = modelformset_factory(HorarioAtencion, form=HorarioForm, extra=1, can_delete=True)
