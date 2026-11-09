@@ -1,0 +1,100 @@
+
+{% extends 'base.html' %}
+
+{% block titulo %}Reserva realizada · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+
+<div class="mx-auto text-center" style="max-width: 680px;">
+
+    <div class="tarjeta py-5 px-4">
+
+        <div class="mb-3">
+            <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center"
+                 style="width: 80px; height: 80px;">
+                <span class="text-success fs-1">✓</span>
+            </div>
+        </div>
+
+        <p class="etiqueta-azul">Reserva registrada</p>
+
+        <h1 class="mb-3">¡Tu hora fue solicitada!</h1>
+
+        <p class="text-secondary mb-4">
+            Hemos registrado tu solicitud de atención.
+            A continuación puedes revisar los datos de tu reserva.
+        </p>
+
+        <div class="text-start bg-light rounded p-4 mb-4">
+
+            <h2 class="h5 mb-3">Detalles de tu reserva</h2>
+
+            <div class="d-flex justify-content-between mb-3">
+                <span class="text-secondary">Código de reserva</span>
+                <strong>#{{ cita.idCita }}</strong>
+            </div>
+
+            <hr>
+
+            <div class="mb-3">
+                <small class="text-secondary">Nombre del cliente</small>
+                <p class="fw-semibold mb-0">{{ cita.cliente.nombre }}</p>
+            </div>
+
+            <div class="mb-3">
+                <small class="text-secondary">RUT</small>
+                <p class="fw-semibold mb-0">{{ cita.cliente.rut }}</p>
+            </div>
+
+            <div class="mb-3">
+                <small class="text-secondary">Motivo de atención</small>
+                <p class="fw-semibold mb-0">{{ cita.motivo }}</p>
+            </div>
+
+            <div class="row g-3">
+
+                <div class="col-6">
+                    <small class="text-secondary">Fecha</small>
+                    <p class="fw-semibold mb-0">
+                        {{ cita.fecha|date:"d/m/Y" }}
+                    </p>
+                </div>
+
+                <div class="col-6">
+                    <small class="text-secondary">Hora</small>
+                    <p class="fw-semibold mb-0">
+                        {{ cita.hora|time:"H:i" }}
+                    </p>
+                </div>
+
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-secondary">Estado</span>
+                <span class="badge bg-warning text-dark">
+                    {{ cita.estado }}
+                </span>
+            </div>
+
+        </div>
+
+        <p class="text-secondary small mb-4">
+            Guarda tu código de reserva para futuras consultas.
+            Si necesitas modificar tu hora, comunícate con Óptica Amaru.
+        </p>
+
+        <a href="{% url 'inicio' %}" class="btn btn-primary btn-lg w-100">
+            Volver al inicio
+        </a>
+
+        <a href="{% url 'pedir_hora' %}" class="btn btn-outline-secondary mt-3 w-100">
+            Solicitar otra hora
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

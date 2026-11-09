@@ -32,6 +32,35 @@
     </nav>
 
     <main class="flex-grow-1">
+
+    <!-- VITRINA AUTOMATICA DE LENTES -->
+    <section class="amaru-marquesina">
+    <div class="amaru-marquesina-pista">
+        <div class="amaru-marquesina-grupo">
+            <span>ÓPTICA AMARU</span>
+            <span class="separador">✦</span>
+            <span>CUIDAMOS TU SALUD VISUAL</span>
+            <span class="separador">✦</span>
+            <span>ATENCIÓN PERSONALIZADA</span>
+            <span class="separador">✦</span>
+            <span>ENCUÉNTRANOS EN EDUARDO ABAROA 1756A</span>
+            <span class="separador">✦</span>
+        </div>
+
+        <div class="amaru-marquesina-grupo" aria-hidden="true">
+            <span>ÓPTICA AMARU</span>
+            <span class="separador">✦</span>
+            <span>CUIDAMOS TU SALUD VISUAL</span>
+            <span class="separador">✦</span>
+            <span>ATENCIÓN PERSONALIZADA</span>
+            <span class="separador">✦</span>
+            <span>ENCUÉNTRANOS EN EDUARDO ABAROA 1756A</span>
+            <span class="separador">✦</span>
+        </div>
+    </div>
+</section>
+
+    <div class="container py-4 py-md-5">
         <div class="container py-4 py-md-5">
 
             <div class="portada row align-items-center g-4 g-lg-5">
@@ -52,27 +81,58 @@
             <div class="row g-3 mt-4">
                 <div class="col-md-4">
                     <a class="acceso" href="{% url 'solicitar' %}">
-                        <div class="icono">Crear un logito aqui xd</div>
+                        <div class="icono">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12h2l2-6h5l1 2 1-2h5l2 6h2"/>
+                        <circle cx="7.5" cy="14" r="4.5"/>
+                        <circle cx="16.5" cy="14" r="4.5"/>
+                        <path d="M12 14h0"/>
+                    </svg>
+                </div>
                         <h2 class="h4 mt-2">Solicitar lentes</h2>
                         <p class="text-secondary mb-0">Cuéntanos qué necesitas y adjunta tu receta.</p>
                     </a>
                 </div>
-                <div class="col-md-4">
-                    <div class="acceso pronto">
-                        <div class="icono">Crear un logito aqui xd</div>
-                        <h2 class="h4 mt-2">Pedir una hora</h2>
-                        <p class="text-secondary mb-2">Reserva tu examen de la vista.</p>
-                        <span class="badge text-bg-light">Próximamente</span>
+                
+            <div class="col-md-4">
+                <a class="acceso" href="{% url 'pedir_hora' %}">
+                    <div class="icono">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="16" rx="2"/>
+                            <path d="M16 3v4M8 3v4M3 10h18"/>
+                            <circle cx="16.5" cy="16.5" r="3"/>
+                            <path d="M16.5 15v1.5l1 .5"/>
+                        </svg>
                     </div>
-                </div>
+                    <h2 class="h4 mt-2">Pedir una hora</h2>
+                    <p class="text-secondary mb-0">
+                        Reserva tu examen de la vista.
+                    </p>
+                </a>
+            </div>
+
                 <div class="col-md-4">
                     <a class="acceso" href="{% url 'consultar_estado' %}">
-                        <div class="icono">Crear un logito aqui xd</div>
+                <div class="icono">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="18" height="16" rx="2"/>
+                        <path d="M16 3v4M8 3v4M3 10h18"/>
+                        <path d="m9 15 2 2 4-4"/>
+                    </svg>
+                </div>
                         <h2 class="h4 mt-2">Consultar el estado</h2>
                         <p class="text-secondary mb-0">Con tu RUT y tu código ves en qué etapa va tu solicitud.</p>
                     </a>
                 </div>
             </div>
+            
+
 
         </div>
     </main>
@@ -84,6 +144,13 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+
+</script>
 </body>
 </html>
+

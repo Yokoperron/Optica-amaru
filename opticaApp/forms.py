@@ -1,6 +1,10 @@
 from django import forms
 from opticaApp.models import *
+
 from django.forms import modelformset_factory
+
+from datetime import date ## <- esto es nuevo para la creacion del form de pedir hora ##
+
 
 
 # Función de ayuda: revisa si un RUT es válido (el dígito verificador debe calzar).
@@ -174,6 +178,7 @@ class EstadoForm(forms.ModelForm):
         # Los estados se muestran en su orden (Recibida, En revisión, En taller...)
         self.fields['estado'].queryset = Estado.objects.order_by('orden')
 
+
 class HorarioForm(forms.ModelForm):
     class Meta:
         model = HorarioAtencion
@@ -187,3 +192,131 @@ class HorarioForm(forms.ModelForm):
 
 # Un formset es "varios formularios iguales juntos": uno por cada bloque del horario
 HorarioFormSet = modelformset_factory(HorarioAtencion, form=HorarioForm, extra=1, can_delete=True)
+
+
+
+## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
+
+
+class CitaForm(forms.Form):
+
+    rut = forms.CharField(
+        label='RUT',
+        max_length=10,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '12.345.678-9'
+        })
+    )
+
+    nombre = forms.CharField(
+        label='Nombre completo',
+        max_length=120,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Tu nombre completo'
+        })
+    )
+
+    telefono = forms.CharField(
+        label='Teléfono',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+56 9 1234 5678'
+        })
+    )
+
+    email = forms.EmailField(
+        label='Correo electrónico',
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'correo@ejemplo.cl'
+        })
+    )
+
+    contacto = forms.CharField(
+        label='Medio de contacto',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'WhatsApp, llamada o correo'
+        })
+    )
+
+    motivo = forms.CharField(
+        label='Motivo de la atención',
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control'
+        })
+    )
+
+    fecha = forms.DateField(
+        label='Fecha de atención',
+        input_formats=['%Y-%m-%d'],
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        })
+    )
+
+    hora = forms.TimeField(
+        label='Hora de atención',
+        input_formats=['%H:%M'],
+        widget=forms.TimeInput(attrs={
+            'class': 'form-control',
+            'type': 'time',
+            'min': '09:00',
+            'max': '17:00',
+            'step': '1800'
+        })
+    )
+
+    acepta_datos = forms.BooleanField(
+        label='Acepto el tratamiento de mis datos personales para gestionar mi reserva',
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['fecha'].widget.attrs['min'] = date.today().isoformat()
+
+    def clean_fecha(self):
+        fecha = self.cleaned_data['fecha']
+
+        if fecha < date.today():
+            raise forms.ValidationError(
+                'No puedes seleccionar una fecha anterior a hoy.'
+            )
+
+        if fecha.weekday() >= 5:
+            raise forms.ValidationError(
+                'Las reservas solamente están disponibles de lunes a viernes.'
+            )
+
+        return fecha
+
+    def clean_hora(self):
+        hora = self.cleaned_data['hora']
+
+        if hora.hour < 9 or hora.hour >= 17:
+            raise forms.ValidationError(
+                'Selecciona una hora entre las 09:00 y las 17:00.'
+            )
+
+        return hora
+
+
+    def clean(self):
+        datos = super().clean()
+
+        if datos.get('contacto') == 'Correo' and not datos.get('email'):
+            self.add_error(
+                'email',
+                'Debes ingresar tu correo electronico.'
+            )
+        return datos
+
