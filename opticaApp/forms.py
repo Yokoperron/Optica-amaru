@@ -178,27 +178,15 @@ class EstadoForm(forms.ModelForm):
 
 ## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
 
+
 class CitaForm(forms.Form):
-
-    CONTACTOS = [
-        ('WhatsApp', 'WhatsApp'),
-        ('Llamada', 'Llamada'),
-        ('Correo', 'Correo'),
-    ]
-
-    MOTIVOS = [
-        ('Examen de la vista', 'Examen de la vista'),
-        ('Control visual', 'Control visual'),
-        ('Evaluación de lentes', 'Evaluación de lentes'),
-        ('Otro', 'Otro'),
-    ]
 
     rut = forms.CharField(
         label='RUT',
-        max_length=12,
+        max_length=10,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '12.345.678-5'
+            'placeholder': '12.345.678-9'
         })
     )
 
@@ -207,83 +195,101 @@ class CitaForm(forms.Form):
         max_length=120,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder':'Ingresa tu nombre'
+            'placeholder': 'Tu nombre completo'
         })
     )
+
     telefono = forms.CharField(
-        label='Telefono',
+        label='Teléfono',
         max_length=20,
         widget=forms.TextInput(attrs={
-            'class':'form-control',
-            'placeholder':'+56 9 1212 2323'
+            'class': 'form-control',
+            'placeholder': '+56 9 1234 5678'
         })
     )
 
     email = forms.EmailField(
-        label='Correo electronico',
+        label='Correo electrónico',
         required=False,
         widget=forms.EmailInput(attrs={
-            'class':'form-control',
-            'placeholder': 'sebastianleiva@correo.cl'
+            'class': 'form-control',
+            'placeholder': 'correo@ejemplo.cl'
         })
     )
 
-    contacto = forms.ChoiceField(
-        label='Medio de contacto preferido',
-        choices=CONTACTOS,
-        initial='Whatsapp'
+    contacto = forms.CharField(
+        label='Medio de contacto',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'WhatsApp, llamada o correo'
+        })
     )
 
-    motivo = forms.ChoiceField(
-        label = 'Motivo de la atención',
-        choices=MOTIVOS,
-        widget=forms.Select(attrs={
-            'class':'form-control'
+    motivo = forms.CharField(
+        label='Motivo de la atención',
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control'
         })
     )
 
     fecha = forms.DateField(
-        label='Hora de la atención',
+        label='Fecha de atención',
+        input_formats=['%Y-%m-%d'],
         widget=forms.DateInput(attrs={
-            'class':'form-control',
-            'type':'date',
-            'step':'1800'
+            'class': 'form-control',
+            'type': 'date'
+        })
+    )
+
+    hora = forms.TimeField(
+        label='Hora de atención',
+        input_formats=['%H:%M'],
+        widget=forms.TimeInput(attrs={
+            'class': 'form-control',
+            'type': 'time',
+            'min': '09:00',
+            'max': '17:00',
+            'step': '1800'
         })
     )
 
     acepta_datos = forms.BooleanField(
-        label='Acepto el tratamiento de mis datos personales para gestionar mi reserva'
+        label='Acepto el tratamiento de mis datos personales para gestionar mi reserva',
+        required=True
     )
 
-    def clean_rut(self):
-        rut = rut_valido(self.cleaned_data['rut'])
-        if rut is None:
-            raise forms.ValidationError(
-             'El RUT ingresado no es valido'   
-            )
-        return rut
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
+        self.fields['fecha'].widget.attrs['min'] = date.today().isoformat()
 
     def clean_fecha(self):
         fecha = self.cleaned_data['fecha']
+
         if fecha < date.today():
             raise forms.ValidationError(
-                'No puedes reservar una hora anterior a hoy.'
+                'No puedes seleccionar una fecha anterior a hoy.'
             )
+
+        if fecha.weekday() >= 5:
+            raise forms.ValidationError(
+                'Las reservas solamente están disponibles de lunes a viernes.'
+            )
+
         return fecha
 
     def clean_hora(self):
         hora = self.cleaned_data['hora']
 
-        if hora.hour < 9 or hora.hour > 17:
+        if hora.hour < 9 or hora.hour >= 17:
             raise forms.ValidationError(
-                'Los horarios disponibles son de las 09:00 a 17:00.'
+                'Selecciona una hora entre las 09:00 y las 17:00.'
             )
-        if hora.minute not in [0, 30]:
-            raise forms.ValidationError(
-                'Selecciona horarios en intervalos de 30 minutos.'
-            )
+
         return hora
+
 
     def clean(self):
         datos = super().clean()

@@ -558,39 +558,81 @@ a {
 
 }
 
-.carrusel-controles {
+
+/* VITRINA AUTOMATICA DE LENTES */
+
+.vitrina-lentes {
+    width: 100%;
+    height: 120px;
+    overflow: hidden;
     display: flex;
     align-items: center;
-    gap: 10px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--linea);
 }
 
-.btn-carrusel {
+.vitrina-pista {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    gap: 38px;
+    padding-right: 38px;
+    animation: amaruVitrina 40s linear infinite;
+}
+
+.vitrina-item {
+    flex: 0 0 145px;
+    height: 95px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--linea);
-    border-radius: 50%;
-    background: #fff;
-    color: var(--tinta);
-    font-size: 17px;
-    cursor: pointer;
-    transition: all .2s ease;
 }
 
-.btn-carrusel:hover {
-    background: var(--azul);
-    border-color: var(--azul);
-    color: #fff;
-    transform: scale(1.05);
+.vitrina-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform .25s ease;
 }
 
-.btn-carrusel:active {
-    transform: scale(.95);
+.vitrina-item:hover img {
+    transform: scale(1.08);
 }
 
-.btn-carrusel:focus-visible {
-    outline: 3px solid rgba(13, 110, 253, .25);
-    outline-offset: 3px;
+@keyframes amaruVitrina {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.vitrina-lentes:hover .vitrina-pista {
+    animation-play-state: paused;
+}
+
+@media (max-width: 576px) {
+
+    .vitrina-lentes {
+        height: 100px;
+    }
+
+    .vitrina-pista {
+        gap: 25px;
+        padding-right: 25px;
+        animation-duration: 35s;
+    }
+
+    .vitrina-item {
+        flex-basis: 115px;
+        height: 78px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vitrina-pista {
+        animation: none;
+    }
 }

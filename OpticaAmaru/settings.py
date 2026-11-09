@@ -96,24 +96,9 @@ DATABASES = {
         "PORT": "3306",
     },
 
-    # BASE DE DATOS EN LA NUBE: AIVEN
-    "aiven": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "optica_amaru",
-        "USER": "avnadmin",
-        "PASSWORD": os.environ.get("AIVEN_DB_PASSWORD"),
-        "HOST": "mysql-21bc8203-diegocarmona7771-46d8.e.aivencloud.com",
-        "PORT": "11712",
-        "OPTIONS": {
-            "ssl": {
-                "ca": str(BASE_DIR / "ca.pem")
-            }
-        },
-    },
+
 }
-# En Render, utilizar Aiven como base de datos principal
-if os.environ.get("RENDER"):
-    DATABASES["default"] = DATABASES["aiven"]
+
 
 
 

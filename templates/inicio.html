@@ -32,6 +32,28 @@
     </nav>
 
     <main class="flex-grow-1">
+
+    <!-- VITRINA AUTOMATICA DE LENTES -->
+    <section class="vitrina-lentes">
+        <div class="vitrina-pista" id="vitrinaPista">
+
+            {% for lente in lentes_inicio %}
+                {% if lente.imagen %}
+                    <a href="{% url 'catalogo' %}"
+                       class="vitrina-item"
+                       aria-label="Ver catálogo de lentes">
+
+                        <img src="{{ lente.imagen.url }}"
+                             alt="{{ lente.nombre }}"
+                             loading="eager">
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+        </div>
+    </section>
+
+    <div class="container py-4 py-md-5">
         <div class="container py-4 py-md-5">
 
             <div class="portada row align-items-center g-4 g-lg-5">
@@ -103,77 +125,7 @@
                 </div>
             </div>
             
-<!-- CARRUSEL DE LENTES -->
-<section class="carrusel-inicio mt-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-
-        <div>
-            <p class="etiqueta-azul mb-1">NUESTROS PRODUCTOS</p>
-            <h2 class="h3 mb-1">Descubre nuestros lentes</h2>
-            <p class="text-secondary mb-0">
-                Conoce algunos de los modelos disponibles en nuestra óptica.
-            </p>
-        </div>
-
-        <div class="carrusel-controles">
-
-    <button type="button"
-            class="btn-carrusel"
-            id="anteriorLentes"
-            aria-label="Ver lentes anteriores">
-        <i class="bi bi-chevron-left"></i>
-    </button>
-
-    <button type="button"
-            class="btn-carrusel"
-            id="siguienteLentes"
-            aria-label="Ver lentes siguientes">
-        <i class="bi bi-chevron-right"></i>
-    </button>
-
-</div>
-
-    </div>
-
-    <div class="carrusel-ventana" id="ventanaLentes">
-
-        <div class="carrusel-pista" id="pistaLentes">
-
-            {% for lente in lentes_inicio %}
-
-                <a href="{% url 'catalogo' %}"
-                   class="carrusel-producto"
-                   aria-label="Ver catálogo de lentes">
-
-                    <img src="{{ lente.imagen.url }}"
-                         alt="{{ lente.nombre }}"
-                         loading="lazy">
-
-                </a>
-
-            {% empty %}
-
-                <div class="alert alert-light border w-100">
-                    Actualmente no hay imágenes de lentes disponibles.
-                </div>
-
-            {% endfor %}
-
-        </div>
-
-    </div>
-
-    <div class="text-end mt-3">
-
-        <a href="{% url 'catalogo' %}"
-           class="btn btn-suave">
-            Ver todos los lentes →
-        </a>
-
-    </div>
-
-</section>
 
         </div>
     </main>
@@ -188,32 +140,34 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    const ventana = document.getElementById('ventanaLentes');
-    const anterior = document.getElementById('anteriorLentes');
-    const siguiente = document.getElementById('siguienteLentes');
+    const pista = document.getElementById('vitrinaPista');
 
-    if (!ventana || !anterior || !siguiente) return;
+    if (!pista || pista.children.length === 0) return;
 
-    anterior.addEventListener('click', function () {
-        ventana.scrollBy({
-            left: -400,
-            behavior: 'smooth'
+    // Duplicar los productos para conseguir movimiento continuo
+    const productos = Array.from(pista.children);
+
+    productos.forEach(function (producto) {
+
+        const copia = producto.cloneNode(true);
+
+        copia.setAttribute('aria-hidden', 'true');
+
+        copia.querySelectorAll('img').forEach(function (imagen) {
+            imagen.loading = 'eager';
+            imagen.alt = '';
         });
-    });
 
-    siguiente.addEventListener('click', function () {
-        ventana.scrollBy({
-            left: 400,
-            behavior: 'smooth'
-        });
+        pista.appendChild(copia);
+
     });
 
 });
 </script>
-
 </body>
 </html>
 
