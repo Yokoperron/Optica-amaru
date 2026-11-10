@@ -5,6 +5,8 @@ from django.forms import modelformset_factory
 
 from datetime import date ## <- esto es nuevo para la creacion del form de pedir hora ##
 
+from opticaApp.horarios import horas_disponibles, fecha_maxima
+
 
 
 # Función de ayuda: revisa si un RUT es válido (el dígito verificador debe calzar).
@@ -179,12 +181,16 @@ class EstadoForm(forms.ModelForm):
         self.fields['estado'].queryset = Estado.objects.order_by('orden')
 
 
+# Formulario del personal para editar un bloque del horario de atención.
+# Es un ModelForm: se arma solo a partir del modelo HorarioAtencion.
 class HorarioForm(forms.ModelForm):
     class Meta:
         model = HorarioAtencion
         fields = ['dia', 'hora_inicio', 'hora_fin', 'duracion_min', 'activo']
         widgets = {
+            # Los widgets definen cómo se dibuja cada campo en HTML
             'dia': forms.Select(attrs={'class': 'form-select'}),
+            # type='time' muestra el selector de hora del navegador
             'hora_inicio': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
             'hora_fin': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
             'duracion_min': forms.NumberInput(attrs={'class': 'form-control', 'min': 10}),
@@ -282,8 +288,10 @@ class CitaForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields['fecha'].widget.attrs['min'] = date.today().isoformat()
+        # El calendario del navegador no deja elegir fechas pasadas ni más allá del máximo
 
+        self.fields['fecha'].widget.attrs['min'] = date.today().isoformat()
+ 
     def clean_fecha(self):
         fecha = self.cleaned_data['fecha']
 
@@ -292,22 +300,14 @@ class CitaForm(forms.Form):
                 'No puedes seleccionar una fecha anterior a hoy.'
             )
 
-        if fecha.weekday() >= 5:
+        # Límite de anticipación: se define en DIAS_ANTICIPACION (opticaApp/horarios.py)
+        if fecha > fecha_maxima():
             raise forms.ValidationError(
-                'Las reservas solamente están disponibles de lunes a viernes.'
+                f'Solo puedes reservar hasta el {fecha_maxima():%d/%m/%Y}.'
             )
 
         return fecha
 
-    def clean_hora(self):
-        hora = self.cleaned_data['hora']
-
-        if hora.hour < 9 or hora.hour >= 17:
-            raise forms.ValidationError(
-                'Selecciona una hora entre las 09:00 y las 17:00.'
-            )
-
-        return hora
 
 
     def clean(self):
@@ -318,6 +318,20 @@ class CitaForm(forms.Form):
                 'email',
                 'Debes ingresar tu correo electronico.'
             )
+            
+        # Validación principal de la reserva: la hora debe estar libre según el
+        # horario del personal. Se aplica en el servidor aunque alguien manipule la página.
+
+        fecha = datos.get('fecha')
+        hora = datos.get('hora')
+        if fecha and hora:
+            libres = horas_disponibles(fecha)
+            if not libres:
+                self.add_error('fecha', 'No hay horas disponibles ese día. Elige otra fecha.')
+            elif hora not in libres:
+                sugerencia = ', '.join(h.strftime('%H:%M') for h in libres[:8])
+                self.add_error('hora', f'Esa hora no está disponible. Horas libres: {sugerencia}.')
+
         return datos
 
 

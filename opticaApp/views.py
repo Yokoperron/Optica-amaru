@@ -1,15 +1,20 @@
 import random
 import string
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from django.db import IntegrityError ## <- Lo nuevo para esta funcion ##
 from django.contrib import messages
-
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from opticaApp.models import *
 from opticaApp.forms import *     # trae los formularios y la función rut_valido
 from django.views.decorators.http import require_POST
+
+from datetime import datetime
+
+
+
+from opticaApp.horarios import fecha_maxima, agenda_del_dia
 
 def crear_folio():
     # Código de seguimiento al azar: AMR- y 6 letras o números
@@ -164,13 +169,13 @@ def detalle_solicitud(request, idSolicitud):
 
     return render(request, 'detalle_solicitud.html', {'solicitud': solicitud, 'form': form})
 
-
+# Pantalla del personal para editar el horario de atención (tabla HorarioAtencion).
 @login_required
 def editar_horario(request):
     if request.method == 'POST':
         formset = HorarioFormSet(request.POST, queryset=HorarioAtencion.objects.all())
         if formset.is_valid():
-            formset.save()
+            formset.save()  # guarda los bloques nuevos, editados y eliminados
             return redirect('editar_horario')
     else:
         formset = HorarioFormSet(queryset=HorarioAtencion.objects.all())
@@ -181,6 +186,25 @@ def editar_horario(request):
 
 
 def pedir_hora(request):
+    # --- NUEVO: la fecha y la hora elegidas llegan por la dirección (GET) o por el formulario (POST) ---
+    origen = request.POST if request.method == 'POST' else request.GET
+    try:
+        fecha_sel = datetime.strptime(origen.get('fecha', ''), '%Y-%m-%d').date()
+    except ValueError:
+        fecha_sel = None
+    try:
+        hora_sel = datetime.strptime(origen.get('hora', ''), '%H:%M').time()
+    except ValueError:
+        hora_sel = None
+
+    
+    # Horas del día elegido (libres y reservadas), calculadas con el horario del personal
+    agenda = []
+    if fecha_sel and date.today() <= fecha_sel <= fecha_maxima():
+        agenda = agenda_del_dia(fecha_sel)
+    hay_libres = any(item['estado'] == 'libre' for item in agenda)
+    # --- FIN DE LO NUEVO ---
+
     if request.method == 'POST':
         form = CitaForm(request.POST)
 
@@ -216,7 +240,7 @@ def pedir_hora(request):
 
                 return redirect('cita_creada', idCita=cita.idCita)
 
-            except IntegrityError:
+            except IntegrityError:                      # <- se quitó el print
                 form.add_error(
                     None,
                     'Ese horario ya fue reservado. Por favor, selecciona otro.'
@@ -225,7 +249,17 @@ def pedir_hora(request):
     else:
         form = CitaForm()
 
-    return render(request, 'pedir_hora.html', {'form': form})
+    return render(request, 'pedir_hora.html', {
+        'form': form,
+        'horario': HorarioAtencion.objects.filter(activo=True),
+        # --- NUEVO ---
+        'fecha_sel': fecha_sel,
+        'hora_sel': hora_sel,
+        'agenda': agenda,
+        'hay_libres': hay_libres,
+        'hoy': date.today(),
+        'max_fecha': fecha_maxima(),
+    })
 
 
 def cita_creada(request, idCita):

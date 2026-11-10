@@ -77,10 +77,15 @@ class ProductoLente(models.Model):
     def __str__(self):
         return self.nombre
 
+# HORARIO ATENCION 
+
+# Horario de atención semanal que define el personal. Se repite todas las semanas:
+# "Lunes 13:00-13:30" vale para todos los lunes. (Para días cerrados puntuales,
+# como un feriado, habría que agregar una tabla aparte.)
 
 class HorarioAtencion(models.Model):
     DIAS = [(0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'), (3, 'Jueves'),
-            (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo')]
+            (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo')] # mismo orden que date.weekday()
     dia = models.IntegerField(choices=DIAS)
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
@@ -91,10 +96,12 @@ class HorarioAtencion(models.Model):
         ordering = ['dia', 'hora_inicio'] # esto es equivalente al order by en sql entrega la tabla ordenada 
 
     def clean(self):
+        # Validación que se ejecuta al guardar desde un formulario o desde /admin/
         if self.hora_inicio and self.hora_fin and self.hora_fin <= self.hora_inicio:
             raise ValidationError('La hora de término debe ser posterior a la de inicio.')
 
     def __str__(self):
+        # Texto con que se ve cada fila, por ejemplo: "Lunes 13:00-13:30"
         return f"{self.get_dia_display()} {self.hora_inicio:%H:%M}-{self.hora_fin:%H:%M}"
 
 
