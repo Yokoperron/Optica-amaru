@@ -16,7 +16,7 @@ DIAS_ANTICIPACION = 60    # hasta cuántos días adelante se puede reservar
 
 def fecha_maxima():
     """Última fecha en la que se permite reservar (hoy + DIAS_ANTICIPACION)."""
-    return date.today() + timedelta(days=DIAS_ANTICIPACION)
+    return timezone.localdate() + timedelta(days=DIAS_ANTICIPACION)
 
 
 def horas_disponibles(fecha):
@@ -27,7 +27,7 @@ def horas_disponibles(fecha):
     # (weekday(): lunes = 0 ... domingo = 6, igual que el campo "dia" del modelo)
     bloques = HorarioAtencion.objects.filter(dia=fecha.weekday(), activo=True)
     # Horas que ya tienen una cita ese día
-    ocupadas = set(Cita.objects.filter(fecha=fecha).values_list('hora', flat=True))
+    ocupadas = set(Cita.objects.filter(fecha=fecha).exclude(estado='Cancelada').values_list('hora', flat=True))
 
     libres = set()
     for bloque in bloques:
@@ -52,7 +52,7 @@ def agenda_del_dia(fecha):
     La usa la pantalla para mostrar al cliente qué horas están tomadas."""
     ahora = timezone.localtime()
     bloques = HorarioAtencion.objects.filter(dia=fecha.weekday(), activo=True)
-    ocupadas = set(Cita.objects.filter(fecha=fecha).values_list('hora', flat=True))
+    ocupadas = set(Cita.objects.filter(fecha=fecha).exclude(estado='Cancelada').values_list('hora', flat=True))
     
     horas = {}
     for bloque in bloques:

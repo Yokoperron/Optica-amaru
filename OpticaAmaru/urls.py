@@ -18,6 +18,12 @@ urlpatterns = [
     path('pedir-hora/', pedir_hora, name='pedir_hora'), #<- pedir hora
     path('pedir-hora/listo/<int:idCita>/', cita_creada, name='cita_creada'), #<- pedir hora
     path('panel/cita/<int:idCita>/estado/',actualizar_estado_cita,name='actualizar_estado_cita'),
+    path('panel/calendario/', calendario_admin, name='calendario_admin'),
+    path('panel/api/citas/', api_citas, name='api_citas'),
+    path('panel/api/citas/crear/', api_crear_cita, name='api_crear_cita'),
+    path('panel/api/horarios/', api_guardar_horario, name='api_guardar_horario'),
+    path('panel/api/horarios/<int:idHorario>/', api_eliminar_horario, name='api_eliminar_horario'),
+    path('panel/api/citas/<int:idCita>/', api_actualizar_cita, name='api_actualizar_cita'),
     path('panel/agregar-lente/',agregar_lente,name='agregar_lente'),
 
     # Personal (pide iniciar sesión)

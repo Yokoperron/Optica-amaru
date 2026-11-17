@@ -1,20 +1,25 @@
 import random
 import string
+import json
 from datetime import date, timedelta, datetime
-from django.db import IntegrityError ## <- Lo nuevo para esta funcion ##
+from django.db import IntegrityError, transaction
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from opticaApp.models import *
 from opticaApp.forms import *     # trae los formularios y la función rut_valido
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.dateparse import parse_date
 
 from datetime import datetime
 
 
 
-from opticaApp.horarios import fecha_maxima, agenda_del_dia
+from opticaApp.horarios import fecha_maxima, agenda_del_dia, horas_disponibles
 
 def crear_folio():
     # Código de seguimiento al azar: AMR- y 6 letras o números
@@ -170,94 +175,98 @@ def detalle_solicitud(request, idSolicitud):
     return render(request, 'detalle_solicitud.html', {'solicitud': solicitud, 'form': form})
 
 # Pantalla del personal para editar el horario de atención (tabla HorarioAtencion).
+
 @login_required
+@user_passes_test(lambda user: user.is_staff)
+@ensure_csrf_cookie
 def editar_horario(request):
-    if request.method == 'POST':
-        formset = HorarioFormSet(request.POST, queryset=HorarioAtencion.objects.all())
-        if formset.is_valid():
-            formset.save()  # guarda los bloques nuevos, editados y eliminados
-            return redirect('editar_horario')
-    else:
-        formset = HorarioFormSet(queryset=HorarioAtencion.objects.all())
-    return render(request, 'editar_horario.html', {'formset': formset})
+    horarios = HorarioAtencion.objects.filter(activo=True).order_by('dia', 'hora_inicio')
+
+    datos_horarios = [
+        {
+            'id': horario.id,
+            'dia': horario.dia,
+            'hora_inicio': horario.hora_inicio.strftime('%H:%M'),
+            'hora_fin': horario.hora_fin.strftime('%H:%M'),
+            'duracion_min': horario.duracion_min
+        }
+        for horario in horarios
+    ]
+
+    return render(request, 'panel_horarios.html', {
+    'horarios': datos_horarios
+})
+
 
 
 ## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
 
 
 def pedir_hora(request):
-    # --- NUEVO: la fecha y la hora elegidas llegan por la dirección (GET) o por el formulario (POST) ---
     origen = request.POST if request.method == 'POST' else request.GET
     try:
         fecha_sel = datetime.strptime(origen.get('fecha', ''), '%Y-%m-%d').date()
-    except ValueError:
+    except (ValueError, TypeError):
         fecha_sel = None
     try:
         hora_sel = datetime.strptime(origen.get('hora', ''), '%H:%M').time()
-    except ValueError:
+    except (ValueError, TypeError):
         hora_sel = None
 
-    
-    # Horas del día elegido (libres y reservadas), calculadas con el horario del personal
-    agenda = []
-    if fecha_sel and date.today() <= fecha_sel <= fecha_maxima():
-        agenda = agenda_del_dia(fecha_sel)
-    hay_libres = any(item['estado'] == 'libre' for item in agenda)
-    # --- FIN DE LO NUEVO ---
-
-    if request.method == 'POST':
+    # Consultar disponibilidad es una acción independiente: no debe validar
+    # los datos personales que se completan recién al confirmar la reserva.
+    if request.method == 'POST' and request.POST.get('accion') == 'ver_horas':
+        form = CitaForm()
+    elif request.method == 'POST':
         form = CitaForm(request.POST)
-
         if form.is_valid():
             datos = form.cleaned_data
-
-            cliente, creado = Cliente.objects.get_or_create(
-                rut=datos['rut'],
-                defaults={
-                    'nombre': datos['nombre'],
-                    'contacto': datos['contacto'],
-                    'telefono': datos['telefono'],
-                    'email': datos['email'],
-                    'acepta_datos': datos['acepta_datos']
-                }
-            )
-
-            if not creado:
-                cliente.nombre = datos['nombre']
-                cliente.contacto = datos['contacto']
-                cliente.telefono = datos['telefono']
-                cliente.email = datos['email']
-                cliente.acepta_datos = datos['acepta_datos']
-                cliente.save()
-
             try:
-                cita = Cita.objects.create(
-                    cliente=cliente,
-                    fecha=datos['fecha'],
-                    hora=datos['hora'],
-                    motivo=datos['motivo']
-                )
-
-                return redirect('cita_creada', idCita=cita.idCita)
-
-            except IntegrityError:                      # <- se quitó el print
-                form.add_error(
-                    None,
-                    'Ese horario ya fue reservado. Por favor, selecciona otro.'
-                )
-
+                with transaction.atomic():
+                    # Serializa reservas del mismo día mientras se comprueba el cupo.
+                    list(HorarioAtencion.objects.select_for_update().filter(
+                        dia=datos['fecha'].weekday(), activo=True
+                    ))
+                    if datos['hora'] not in horas_disponibles(datos['fecha']):
+                        form.add_error('hora', 'Ese horario acaba de ocuparse. Selecciona otra hora.')
+                    else:
+                        cliente, creado = Cliente.objects.get_or_create(
+                            rut=datos['rut'],
+                            defaults={
+                                'nombre': datos['nombre'], 'contacto': datos['contacto'],
+                                'telefono': datos['telefono'], 'email': datos['email'],
+                                'acepta_datos': datos['acepta_datos']
+                            }
+                        )
+                        if not creado:
+                            cliente.nombre = datos['nombre']
+                            cliente.contacto = datos['contacto']
+                            cliente.telefono = datos['telefono']
+                            cliente.email = datos['email']
+                            cliente.acepta_datos = datos['acepta_datos']
+                            cliente.save(update_fields=['nombre', 'contacto', 'telefono', 'email', 'acepta_datos'])
+                        cita = Cita.objects.create(
+                            cliente=cliente, fecha=datos['fecha'], hora=datos['hora'], motivo=datos['motivo']
+                        )
+                        return redirect('cita_creada', idCita=cita.idCita)
+            except IntegrityError:
+                form.add_error('hora', 'Ese horario ya fue reservado. Selecciona otro.')
     else:
         form = CitaForm()
+
+    agenda = []
+    if fecha_sel and timezone.localdate() <= fecha_sel <= fecha_maxima():
+        agenda = agenda_del_dia(fecha_sel)
+    hay_libres = any(item['estado'] == 'libre' for item in agenda)
 
     return render(request, 'pedir_hora.html', {
         'form': form,
         'horario': HorarioAtencion.objects.filter(activo=True),
-        # --- NUEVO ---
         'fecha_sel': fecha_sel,
         'hora_sel': hora_sel,
         'agenda': agenda,
         'hay_libres': hay_libres,
-        'hoy': date.today(),
+        'hoy': timezone.localdate(),
         'max_fecha': fecha_maxima(),
     })
 
@@ -289,6 +298,222 @@ def actualizar_estado_cita(request, idCita):
         cita.save(update_fields=['estado'])
 
     return redirect('lista_solicitudes')
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@ensure_csrf_cookie
+def calendario_admin(request):
+    citas = Cita.objects.all()
+    horarios = HorarioAtencion.objects.filter(activo=True).order_by('dia', 'hora_inicio')
+    franjas = [{
+        'daysOfWeek': [h.dia],
+        'startTime': h.hora_inicio.strftime('%H:%M:%S'),
+        'endTime': h.hora_fin.strftime('%H:%M:%S'),
+    } for h in horarios]
+    horas_inicio = [h.hora_inicio for h in horarios]
+    horas_fin = [h.hora_fin for h in horarios]
+    return render(request, 'calendario_admin.html', {
+        'total_citas': citas.count(),
+        'pendientes': citas.filter(estado='Pendiente').count(),
+        'confirmadas': citas.filter(estado='Confirmada').count(),
+        'realizadas': citas.filter(estado='Realizada').count(),
+        'canceladas': citas.filter(estado='Cancelada').count(),
+        'hoy': timezone.localdate(),
+        'franjas_horarias': json.dumps(franjas),
+        'hora_minima': min(horas_inicio).strftime('%H:%M:%S') if horas_inicio else '08:00:00',
+        'hora_maxima': max(horas_fin).strftime('%H:%M:%S') if horas_fin else '19:00:00',
+    })
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@require_GET
+def api_citas(request):
+    inicio = parse_date(request.GET.get('start', '')[:10])
+    fin = parse_date(request.GET.get('end', '')[:10])
+    citas = Cita.objects.select_related('cliente')
+    if inicio:
+        citas = citas.filter(fecha__gte=inicio)
+    if fin:
+        citas = citas.filter(fecha__lt=fin)
+
+    colores = {
+        'Pendiente': '#d97706',
+        'Confirmada': '#16845b',
+        'Cancelada': '#64748b',
+        'Realizada': '#2563eb',
+    }
+    eventos = []
+    for cita in citas:
+        inicio_dt = datetime.combine(cita.fecha, cita.hora)
+        bloque = HorarioAtencion.objects.filter(dia=cita.fecha.weekday(), activo=True, hora_inicio__lte=cita.hora, hora_fin__gt=cita.hora).first()
+        duracion = bloque.duracion_min if bloque else 30
+        fin_evento = (inicio_dt + timedelta(minutes=duracion)).isoformat()
+        inicio_evento = inicio_dt.isoformat()
+        eventos.append({
+            'id': cita.idCita,
+            'title': f"{cita.hora:%H:%M} · {cita.cliente.nombre}",
+            'start': inicio_evento,
+            'end': fin_evento,
+            'backgroundColor': colores.get(cita.estado, '#64748b'),
+            'borderColor': colores.get(cita.estado, '#64748b'),
+            'editable': cita.estado in ('Pendiente', 'Confirmada'),
+            'extendedProps': {
+                'cliente': cita.cliente.nombre,
+                'rut': cita.cliente.rut_oculto(),
+                'telefono': cita.cliente.telefono,
+                'email': cita.cliente.email,
+                'motivo': cita.motivo,
+                'estado': cita.estado,
+                'fecha': cita.fecha.strftime('%d/%m/%Y'),
+                'hora': cita.hora.strftime('%H:%M'),
+            }
+        })
+    return JsonResponse(eventos, safe=False)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@require_POST
+def api_guardar_horario(request):
+    """Guarda en MySQL un bloque semanal de atención configurado en el panel."""
+    import json
+    try:
+        datos = json.loads(request.body or '{}')
+        dia = int(datos.get('dia'))
+        duracion = int(datos.get('duracion_min', 30))
+        inicio = datetime.strptime(datos.get('hora_inicio', ''), '%H:%M').time()
+        fin = datetime.strptime(datos.get('hora_fin', ''), '%H:%M').time()
+    except (ValueError, TypeError, AttributeError):
+        return JsonResponse({'ok': False, 'error': 'Día, horas o duración no válidos.'}, status=400)
+
+    if dia not in range(7) or duracion not in (15, 30, 45, 60) or fin <= inicio:
+        return JsonResponse({'ok': False, 'error': 'Revisa el día, la duración y el rango horario.'}, status=400)
+    if HorarioAtencion.objects.filter(dia=dia, activo=True, hora_inicio__lt=fin, hora_fin__gt=inicio).exists():
+        return JsonResponse({'ok': False, 'error': 'Ese bloque se cruza con otro horario de atención del mismo día.'}, status=409)
+
+    horario = HorarioAtencion(dia=dia, hora_inicio=inicio, hora_fin=fin, duracion_min=duracion, activo=True)
+    try:
+        horario.full_clean()
+        horario.save()
+    except Exception as exc:
+        return JsonResponse({'ok': False, 'error': str(exc)}, status=400)
+    return JsonResponse({'ok': True, 'id': horario.id, 'mensaje': 'Horario guardado.'}, status=201)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@require_POST
+def api_eliminar_horario(request, idHorario):
+    horario = get_object_or_404(HorarioAtencion, pk=idHorario, activo=True)
+    # No se elimina físicamente: se desactiva para conservar el historial de configuración.
+    horario.activo = False
+    horario.save(update_fields=['activo'])
+    return JsonResponse({'ok': True, 'mensaje': 'Horario desactivado.'})
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@require_POST
+def api_crear_cita(request):
+    """Crea una cita desde un espacio libre del calendario administrativo."""
+    import json
+    try:
+        datos = json.loads(request.body or '{}')
+    except (ValueError, TypeError):
+        return JsonResponse({'ok': False, 'error': 'Los datos enviados no son válidos.'}, status=400)
+
+    datos_form = {
+        'rut': datos.get('rut', ''),
+        'nombre': datos.get('nombre', ''),
+        'telefono': datos.get('telefono', ''),
+        'email': datos.get('email', ''),
+        'contacto': datos.get('contacto', 'WhatsApp'),
+        'motivo': datos.get('motivo', ''),
+        'fecha': datos.get('fecha', ''),
+        'hora': datos.get('hora', ''),
+        'acepta_datos': 'on',
+    }
+    form = CitaForm(datos_form)
+    if not form.is_valid():
+        errores = {campo: [str(e) for e in lista] for campo, lista in form.errors.items()}
+        mensaje = next((e[0] for e in errores.values() if e), 'Revisa los datos de la reserva.')
+        return JsonResponse({'ok': False, 'error': mensaje, 'errores': errores}, status=400)
+
+    datos_limpios = form.cleaned_data
+    try:
+        with transaction.atomic():
+            # Bloquea la configuración del día y vuelve a comprobar el cupo antes de guardar.
+            list(HorarioAtencion.objects.select_for_update().filter(dia=datos_limpios['fecha'].weekday(), activo=True))
+            if datos_limpios['hora'] not in horas_disponibles(datos_limpios['fecha']):
+                return JsonResponse({'ok': False, 'error': 'Ese horario ya no está disponible. Actualiza el calendario.'}, status=409)
+            cliente, creado = Cliente.objects.get_or_create(
+                rut=datos_limpios['rut'],
+                defaults={
+                    'nombre': datos_limpios['nombre'], 'contacto': datos_limpios['contacto'],
+                    'telefono': datos_limpios['telefono'], 'email': datos_limpios['email'],
+                    'acepta_datos': True,
+                }
+            )
+            if not creado:
+                cliente.nombre = datos_limpios['nombre']
+                cliente.contacto = datos_limpios['contacto']
+                cliente.telefono = datos_limpios['telefono']
+                cliente.email = datos_limpios['email']
+                cliente.acepta_datos = True
+                cliente.save(update_fields=['nombre', 'contacto', 'telefono', 'email', 'acepta_datos'])
+            cita = Cita.objects.create(
+                cliente=cliente, fecha=datos_limpios['fecha'],
+                hora=datos_limpios['hora'], motivo=datos_limpios['motivo']
+            )
+    except IntegrityError:
+        return JsonResponse({'ok': False, 'error': 'Ese horario acaba de ser reservado. Elige otro.'}, status=409)
+
+    return JsonResponse({'ok': True, 'id': cita.idCita, 'mensaje': 'La cita se creó correctamente.'}, status=201)
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@require_POST
+def api_actualizar_cita(request, idCita):
+    try:
+        import json
+        datos = json.loads(request.body or '{}')
+    except (ValueError, TypeError):
+        return JsonResponse({'ok': False, 'error': 'Solicitud no válida.'}, status=400)
+
+    cita = get_object_or_404(Cita, idCita=idCita)
+    nuevo_estado = datos.get('estado')
+    if nuevo_estado is not None:
+        if nuevo_estado not in dict(Cita.ESTADOS):
+            return JsonResponse({'ok': False, 'error': 'Estado no válido.'}, status=400)
+        cita.estado = nuevo_estado
+        cita.save(update_fields=['estado'])
+        return JsonResponse({'ok': True, 'estado': cita.estado})
+
+    if cita.estado in ('Cancelada', 'Realizada'):
+        return JsonResponse({'ok': False, 'error': 'Las citas canceladas o realizadas no se pueden reprogramar.'}, status=409)
+
+    fecha = parse_date(str(datos.get('fecha', '')))
+    try:
+        hora = datetime.strptime(str(datos.get('hora', '')), '%H:%M').time()
+    except ValueError:
+        hora = None
+    if not fecha or not hora:
+        return JsonResponse({'ok': False, 'error': 'Fecha u hora no válida.'}, status=400)
+    if fecha < timezone.localdate() or fecha > fecha_maxima():
+        return JsonResponse({'ok': False, 'error': 'La fecha está fuera del período permitido.'}, status=400)
+
+    with transaction.atomic():
+        list(HorarioAtencion.objects.select_for_update().filter(dia=fecha.weekday(), activo=True))
+        disponibles = horas_disponibles(fecha)
+        if hora not in disponibles:
+            return JsonResponse({'ok': False, 'error': 'Ese horario no está disponible.'}, status=409)
+        cita.fecha = fecha
+        cita.hora = hora
+        cita.save(update_fields=['fecha', 'hora'])
+    return JsonResponse({'ok': True})
+
 
 ###Funcion para agregar catalogo desde el panel
 

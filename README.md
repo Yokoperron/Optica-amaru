@@ -78,3 +78,32 @@ Las migraciones las crea una sola persona.
 Si algún paso te muestra un mensaje que no entiendes, pégamelo completo y lo vemos antes de seguir.
 
 https://optica-amaru.onrender.com/
+
+
+## Calendario de citas (implementación)
+
+Se incorporó un calendario administrativo con FullCalendar conectado a los registros `Cita` de Django/MySQL.
+
+### Puesta en marcha
+
+1. Instala las dependencias del proyecto con `pip install -r requirements.txt`.
+2. Configura la base de datos local o Aiven en `OpticaAmaru/settings.py` y verifica la conexión.
+3. Ejecuta `python manage.py migrate` para aplicar la migración `0007_quitar_unicidad_cita_cancelada`. Esta migración permite conservar las citas canceladas y liberar su horario; la validación de disponibilidad se realiza dentro de una transacción bloqueando los horarios de atención del día.
+4. Ejecuta `python manage.py runserver` y entra con un usuario del personal en `/panel/calendario/`.
+
+### Funciones incluidas
+
+- Vistas mensual, semanal, diaria y de lista.
+- Eventos leídos desde `/panel/api/citas/`.
+- Detalle de cliente y actualización de estado desde el calendario.
+- Reprogramación mediante arrastrar y soltar, validando disponibilidad en el servidor.
+- Contadores de citas pendientes, confirmadas, realizadas y canceladas.
+- Las citas canceladas dejan de ocupar el horario.
+- La consulta de horas en `pedir-hora/` ya no valida los datos personales hasta que se confirma la reserva.
+
+FullCalendar se carga desde CDN, por lo que el navegador necesita conexión a Internet para mostrar el calendario. La aplicación sigue usando sus modelos existentes `Cliente`, `Cita` y `HorarioAtencion`; no se crea una base de datos nueva.
+
+
+## Calendario administrativo conectado a la agenda
+
+En `/panel/calendario/`, el calendario utiliza los modelos existentes `HorarioAtencion`, `Cita` y `Cliente`. Las franjas configuradas en HorarioAtencion se muestran como horario de atención; selecciona un espacio libre en vista Semana o Día para crear una cita. La reserva se valida nuevamente en Django y se guarda en MySQL. Las citas existentes se cargan desde `/panel/api/citas/`. No se agregaron modelos ni migraciones nuevas.

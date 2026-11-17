@@ -232,7 +232,10 @@
             <h2 class="mb-0">Solicitudes de horas</h2>
             <p class="text-secondary small mb-0">Reservas realizadas por los clientes.</p>
         </div>
-        <span class="badge text-bg-primary">{{ citas|length }} reservas</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-primary">{{ citas|length }} reservas</span>
+            <a href="{% url 'calendario_admin' %}" class="btn btn-primary">Abrir calendario</a>
+        </div>
     </div>
 
     <div class="tabla table-responsive">

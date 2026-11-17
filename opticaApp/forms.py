@@ -4,6 +4,7 @@ from opticaApp.models import *
 from django.forms import modelformset_factory
 
 from datetime import date ## <- esto es nuevo para la creacion del form de pedir hora ##
+from django.utils import timezone
 
 from opticaApp.horarios import horas_disponibles, fecha_maxima
 
@@ -208,7 +209,7 @@ class CitaForm(forms.Form):
 
     rut = forms.CharField(
         label='RUT',
-        max_length=10,
+        max_length=12,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': '12.345.678-9'
@@ -290,12 +291,19 @@ class CitaForm(forms.Form):
 
         # El calendario del navegador no deja elegir fechas pasadas ni más allá del máximo
 
-        self.fields['fecha'].widget.attrs['min'] = date.today().isoformat()
+        self.fields['fecha'].widget.attrs['min'] = timezone.localdate().isoformat()
+        self.fields['fecha'].widget.attrs['max'] = fecha_maxima().isoformat()
  
+    def clean_rut(self):
+        rut = rut_valido(self.cleaned_data['rut'])
+        if rut is None:
+            raise forms.ValidationError('El RUT no es válido. Revisa el número y el dígito verificador.')
+        return rut
+
     def clean_fecha(self):
         fecha = self.cleaned_data['fecha']
 
-        if fecha < date.today():
+        if fecha < timezone.localdate():
             raise forms.ValidationError(
                 'No puedes seleccionar una fecha anterior a hoy.'
             )

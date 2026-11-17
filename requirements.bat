@@ -1,7 +1,7 @@
 @echo off
 title Instalador de Requerimientos Django
 echo ===================================================
-echo   Instalando dependencias del proyecto Python...
+echo   Instalando dependencias Optica Amaru...
 echo ===================================================
 echo.
 

@@ -127,12 +127,6 @@ class Cita(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['fecha','hora'],
-                name='hora_unica_por_fecha'
-            )
-        ]
         ordering = ['fecha', 'hora']
 
     def __str__(self):
