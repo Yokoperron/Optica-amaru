@@ -22,7 +22,6 @@
             </button>
             <div class="collapse navbar-collapse" id="menu">
                 <ul class="navbar-nav ms-auto gap-1">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'solicitar' %}">Solicitar lentes</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'consultar_estado' %}">Consultar estado</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'catalogo' %}">Catalogo</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'lista_solicitudes' %}">Personal</a></li>
@@ -80,7 +79,7 @@
 
             <div class="row g-3 mt-4">
                 <div class="col-md-4">
-                    <a class="acceso" href="{% url 'solicitar' %}">
+                    <a class="acceso" href="{% url 'catalogo' %}">
                         <div class="icono">
                     <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
