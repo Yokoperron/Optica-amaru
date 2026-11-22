@@ -23,7 +23,7 @@
             <div class="collapse navbar-collapse" id="menu">
                 <ul class="navbar-nav ms-auto gap-1">
                     <li class="nav-item"><a class="nav-link" href="{% url 'consultar_estado' %}">Consultar estado</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'catalogo' %}">Catalogo</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'catalogo' %}">Catálogo</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'lista_solicitudes' %}">Personal</a></li>
                 </ul>
             </div>
@@ -68,7 +68,7 @@
                     <h1>Tus lentes, sin papeleo ni filas.</h1>
                     <p class="lead mt-3 text-secondary">Pide tus lentes desde el celular, sube la foto de tu receta y sigue cada etapa con un código.</p>
                     <p class="mt-4 d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary btn-lg" href="{% url 'solicitar' %}">Solicitar mis lentes →</a>
+                        <a class="btn btn-primary btn-lg" href="{% url 'catalogo' %}">Ver catálogo →</a>
                         <a class="btn btn-suave btn-lg" href="{% url 'consultar_estado' %}">Ya tengo un código</a>
                     </p>
                 </div>
@@ -90,8 +90,8 @@
                         <path d="M12 14h0"/>
                     </svg>
                 </div>
-                        <h2 class="h4 mt-2">Solicitar lentes</h2>
-                        <p class="text-secondary mb-0">Cuéntanos qué necesitas y adjunta tu receta.</p>
+                        <h2 class="h4 mt-2">Encuentra tus lentes</h2>
+                        <p class="text-secondary mb-0">Busca los lentes que necesitas y adjunta tu receta.</p>
                     </a>
                 </div>
                 
@@ -135,6 +135,105 @@
 
         </div>
     </main>
+
+    <!-- MINI CATÁLOGO BOOTSTRAP -->
+    <section class="mini-catalogo mt-5">
+
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+            <div>
+                <span class="etiqueta-azul">NUESTRA SELECCIÓN</span>
+                <h2 class="mt-2">Descubre nuestros lentes</h2>
+                <p class="text-secondary mb-0">
+                    Algunos de los modelos disponibles en Óptica Amaru.
+                </p>
+            </div>
+
+            <a href="{% url 'catalogo' %}" class="btn btn-suave">
+                Ver catálogo completo →
+            </a>
+        </div>
+
+        <div id="carruselLentes" class="carousel slide" data-bs-ride="false">
+
+            <div class="carousel-inner">
+
+                {% for lente in productos_destacados %}
+
+                    {% if forloop.first or forloop.counter0|divisibleby:4 %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="row g-3">
+                    {% endif %}
+
+                    <div class="col-6 col-lg-3">
+                        <article class="mini-producto h-100">
+
+                            <a href="{% url 'solicitar_producto' lente.id %}"
+                            class="mini-producto-imagen">
+
+                                {% if lente.imagen %}
+                                    <img src="{{ lente.imagen.url }}"
+                                        alt="{{ lente.nombre }}"
+                                        loading="lazy">
+                                {% endif %}
+
+                            </a>
+
+                            <div class="mini-producto-info">
+                                <span class="text-secondary small">
+                                    {{ lente.marca }}
+                                </span>
+
+                                <h3>{{ lente.nombre }}</h3>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>${{ lente.precio }}</strong>
+
+                                    <a href="{% url 'solicitar_producto' lente.id %}"
+                                    class="mini-producto-boton">
+                                        Ver →
+                                    </a>
+                                </div>
+                            </div>
+
+                        </article>
+                    </div>
+
+                    {% if forloop.last or forloop.counter|divisibleby:4 %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                {% empty %}
+                    <p class="text-secondary">
+                        Pronto tendremos nuevos modelos disponibles.
+                    </p>
+                {% endfor %}
+
+            </div>
+
+            {% if productos_destacados|length > 4 %}
+                <button class="carousel-control-prev carrusel-control"
+                        type="button"
+                        data-bs-target="#carruselLentes"
+                        data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+
+                <button class="carousel-control-next carrusel-control"
+                        type="button"
+                        data-bs-target="#carruselLentes"
+                        data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Siguiente</span>
+                </button>
+            {% endif %}
+
+        </div>
+    </section>
+
+
+
 
     <footer>
         <div class="container py-3 d-flex flex-wrap justify-content-between gap-2">

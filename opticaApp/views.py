@@ -30,14 +30,14 @@ def crear_folio():
 # PANTALLAS DEL CLIENTE (no necesitan iniciar sesión) =  Version sin login es mejor wn menos show aunq no lo quiere asi creo lol
 
 def inicio(request):
-    lentes = ProductoLente.objects.filter(
+    productos_destacados = ProductoLente.objects.filter(
         publicado=True
     ).exclude(
         imagen=''
-    ).order_by('-id')[:12]
+    ).order_by('-id')[:8] # los 6 últimos agregados con imagen
 
     return render(request, 'inicio.html', {
-        'lentes_inicio': lentes
+        'productos_destacados': productos_destacados
     })
 
 
