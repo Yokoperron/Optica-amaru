@@ -42,6 +42,19 @@
                                      class="rounded">
                                 <br>
                             {% endif %}
+                            {% if solicitud.marco_personalizado %}
+                            <tr>
+                                <th>Marco personalizado</th>
+                                <td>
+                                    <div class="p-3 rounded bg-light">
+                                        <strong>Descripción del cliente:</strong>
+                                        <p class="mb-0 mt-2">
+                                            {{ solicitud.marco_personalizado|linebreaksbr }}
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
                             <strong>{{ solicitud.producto.nombre }}</strong><br>
                             Marca: {{ solicitud.producto.marca }}<br>
                             Precio: ${{ solicitud.producto.precio }}

@@ -80,10 +80,37 @@
 
         </div>
 
+        <div class="alert alert-info text-start mb-4">
+
+            <h2 class="h6 fw-bold">
+                ¿Necesitas cancelar tu hora?
+            </h2>
+
+            <p class="small mb-2">
+                Guarda este código privado. Lo necesitarás para cancelar tu reserva.
+            </p>
+
+            <div class="bg-white rounded p-3 text-center">
+                <strong class="text-break">
+                    {{ cita.token_cancelacion }}
+                </strong>
+            </div>
+
+            <p class="small text-secondary mt-2 mb-0">
+                No compartas este código con otras personas.
+            </p>
+
+        </div>
+
         <p class="text-secondary small mb-4">
-            Guarda tu código de reserva para futuras consultas.
-            Si necesitas modificar tu hora, comunícate con Óptica Amaru.
+            Tu reserva está registrada. Puedes cancelar tu hora desde nuestra página
+            de cancelaciones utilizando tu RUT y este código privado.
         </p>
+
+        <a href="{% url 'buscar_cita_cancelacion' %}"
+        class="btn btn-outline-danger w-100 mb-3">
+            Cancelar mi hora
+        </a>
 
         <a href="{% url 'inicio' %}" class="btn btn-primary btn-lg w-100">
             Volver al inicio

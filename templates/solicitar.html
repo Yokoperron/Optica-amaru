@@ -105,6 +105,23 @@
                             </div>
                         {% endif %}
 
+                        {% if not producto_seleccionado %}
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ form.marco_personalizado.id_for_label }}">
+                                    {{ form.marco_personalizado.label }}
+                                </label>
+
+                                {{ form.marco_personalizado }}
+
+                                <small class="text-secondary">
+                                    Indícanos el color, la forma, la marca o cualquier característica
+                                    del marco que estás buscando.
+                                </small>
+
+                                {{ form.marco_personalizado.errors }}
+                            </div>
+                        {% endif %}
+
                         <div class="mb-3">
                             <span class="form-label d-block">{{ form.tipo.label }}</span>
                             <div class="opciones">

@@ -100,6 +100,120 @@
 
 </div>
 
+<h2 class="mt-5 mb-3">Administrar portada</h2>
+
+<a href="{% url 'administrar_banners' %}" class="btn btn-outline-primary">
+    Administrar Portada
+</a>
+
+
+<!-- REVISION DE PAGOS -->
+<div class="gestion-seccion mt-5">
+
+    <p class="etiqueta-azul mb-1">Administración financiera</p>
+    <h2>Comprobantes de pago</h2>
+    <p class="text-secondary">
+        Revisa las transferencias enviadas por los clientes.
+    </p>
+
+    {% for pago in pagos_pendientes %}
+
+    <div class="tarjeta mb-3 p-3">
+
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+            <div>
+                <h3 class="h5 mb-1">
+                    Solicitud {{ pago.solicitud.folio }}
+                </h3>
+
+                <p class="mb-1">
+                    Cliente: {{ pago.solicitud.cliente.nombre }}
+                </p>
+
+                <p class="text-secondary small">
+                    Enviado: {{ pago.fecha_creacion|date:"d/m/Y H:i" }}
+                </p>
+
+                <p>
+                    <strong>Monto:</strong>
+                    {% if pago.monto %}
+                        ${{ pago.monto }}
+                    {% else %}
+                        No especificado
+                    {% endif %}
+                </p>
+            </div>
+
+            <span class="estado taller">
+                {{ pago.estado }}
+            </span>
+        </div>
+
+        {% if pago.comprobante %}
+            <a href="{{ pago.comprobante.url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="btn btn-outline-primary mb-3">
+                Ver comprobante →
+            </a>
+        {% endif %}
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <form method="post"
+                      action="{% url 'revisar_pago' pago.id %}">
+                    {% csrf_token %}
+
+                    <input type="hidden"
+                           name="accion"
+                           value="confirmar">
+
+                    <button type="submit"
+                            class="btn btn-success w-100"
+                            onclick="return confirm('¿Confirmas que verificaste esta transferencia?')">
+                        Confirmar pago
+                    </button>
+                </form>
+            </div>
+
+            <div class="col-md-6">
+                <form method="post"
+                      action="{% url 'revisar_pago' pago.id %}">
+                    {% csrf_token %}
+
+                    <input type="hidden"
+                           name="accion"
+                           value="rechazar">
+
+                    <textarea name="observacion"
+                              class="form-control mb-2"
+                              rows="2"
+                              placeholder="Motivo del rechazo"
+                              required></textarea>
+
+                    <button type="submit"
+                            class="btn btn-danger w-100">
+                        Rechazar comprobante
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+
+    {% empty %}
+
+    <div class="alert alert-info">
+        No hay comprobantes pendientes de revisión.
+    </div>
+
+    {% endfor %}
+
+</div>
+
+
 <!-- Solicitudes de lentes -->
 <h2 class="mb-3">Solicitudes de lentes</h2>
 

@@ -46,3 +46,15 @@ admin.site.register(HorarioAtencion, HorarioAtencionAdmin)
 
 admin.site.register(Cita, CitaAdmin)
 
+@admin.register(DatosBancarios)
+class DatosBancariosAdmin(admin.ModelAdmin):
+    list_display = (
+        'banco',
+        'titular',
+        'tipo_cuenta',
+        'numero_cuenta',
+        'activo'
+    )
+
+    list_filter = ('banco', 'activo')
+    search_fields = ('titular', 'rut', 'numero_cuenta')

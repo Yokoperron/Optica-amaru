@@ -977,13 +977,17 @@ a {
 
 .mini-catalogo {
     padding: 35px 0;
+    overflow: hidden;
 }
 
+/* TARJETAS */
+
 .mini-producto {
-    background: white;
+    background: #fff;
     border: 1px solid #e5eaf0;
     border-radius: 16px;
     overflow: hidden;
+    height: 100%;
     transition: transform .25s ease, box-shadow .25s ease;
 }
 
@@ -992,30 +996,40 @@ a {
     box-shadow: 0 10px 25px rgba(0,0,0,.08);
 }
 
+/* CONTENEDOR DE IMAGEN */
+
 .mini-producto-imagen {
     display: flex;
-    height: 190px;
-    background: #f7f8fa;
+    width: 100%;
+    height: 160px;
     align-items: center;
     justify-content: center;
+    background: #f7f8fa;
     overflow: hidden;
 }
 
 .mini-producto-imagen img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    padding: 12px;
+    padding: 15px;
 }
 
+/* INFORMACIÓN */
+
 .mini-producto-info {
-    padding: 16px;
+    padding: 14px;
 }
 
 .mini-producto-info h3 {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     margin: 8px 0 15px;
+}
+
+.mini-producto-info strong {
+    font-size: 15px;
 }
 
 .mini-producto-boton {
@@ -1025,11 +1039,19 @@ a {
     padding: 8px 13px;
     border-radius: 9px;
     font-size: 13px;
+    white-space: nowrap;
 }
 
+.mini-producto-boton:hover {
+    background: #172b43;
+    color: white;
+}
+
+/* FLECHAS */
+
 .carrusel-control {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     top: 40%;
     bottom: auto;
     background: #243d5b;
@@ -1038,16 +1060,26 @@ a {
 }
 
 .carrusel-control.carousel-control-prev {
-    left: -15px;
+    left: 5px;
 }
 
 .carrusel-control.carousel-control-next {
-    right: -15px;
+    right: 5px;
 }
 
-@media(max-width: 575px) {
+/* TABLET */
+
+@media (max-width: 991px) {
     .mini-producto-imagen {
         height: 145px;
+    }
+}
+
+/* CELULAR */
+
+@media (max-width: 575px) {
+    .mini-producto-imagen {
+        height: 125px;
     }
 
     .mini-producto-info {
@@ -1056,5 +1088,80 @@ a {
 
     .mini-producto-info h3 {
         font-size: 14px;
+    }
+
+    .mini-producto-info strong {
+        font-size: 13px;
+    }
+}
+
+
+/* =================================
+   CARRUSEL PROMOCIONAL DE PORTADA
+================================= */
+
+.carrusel-portada {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #fff;
+}
+
+.carrusel-portada-imagen {
+    width: 100%;
+    height: 460px;
+    object-fit: cover;
+}
+
+.carrusel-portada-contenido {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 0 0 25px 8%;
+    background: transparent;
+    pointer-events: none;
+}
+
+.carrusel-portada-contenido .container {
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.carrusel-portada-contenido .btn {
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
+    border: none;
+    border-radius: 25px;
+    padding: 9px 21px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #222;
+    background: white;
+    box-shadow: 0 3px 12px rgba(0,0,0,.15);
+}
+
+.carrusel-portada-contenido .btn:hover {
+    background: #f36b16;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .carrusel-portada-contenido {
+        padding: 0 0 15px 5%;
+    }
+
+    .carrusel-portada-contenido .btn {
+        padding: 7px 16px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .carrusel-portada-imagen {
+        height: 240px;
     }
 }

@@ -59,6 +59,70 @@
     </div>
 </section>
 
+
+
+<!-- CARRUSEL PROMOCIONAL ÓPTICA AMARU -->
+{% if banners %}
+<section id="carruselPortada" class="carousel slide carrusel-portada"
+         data-bs-ride="carousel" data-bs-interval="5000">
+
+    {% if banners|length > 1 %}
+    <div class="carousel-indicators">
+        {% for banner in banners %}
+        <button type="button"
+                data-bs-target="#carruselPortada"
+                data-bs-slide-to="{{ forloop.counter0 }}"
+                class="{% if forloop.first %}active{% endif %}"
+                {% if forloop.first %}aria-current="true"{% endif %}
+                aria-label="Banner {{ forloop.counter }}">
+        </button>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="carousel-inner">
+        {% for banner in banners %}
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+
+            <img src="{{ banner.imagen.url }}"
+                 class="d-block w-100 carrusel-portada-imagen"
+                 alt="{{ banner.titulo|default:'Óptica Amaru' }}">
+
+            {% if banner.enlace_boton %}
+            <div class="carrusel-portada-contenido">
+                <div class="container">
+                    <a href="{{ banner.enlace_boton }}"
+                       class="btn btn-light btn-lg">
+                        Ver más
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if banners|length > 1 %}
+    <button class="carousel-control-prev" type="button"
+            data-bs-target="#carruselPortada" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+        <span class="visually-hidden">Anterior</span>
+    </button>
+
+    <button class="carousel-control-next" type="button"
+            data-bs-target="#carruselPortada" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+        <span class="visually-hidden">Siguiente</span>
+    </button>
+    {% endif %}
+
+</section>
+{% endif %}
+<!-- FIN CARRUSEL PROMOCIONAL -->
+
+
+
     <div class="container py-4 py-md-5">
         <div class="container py-4 py-md-5">
 
@@ -68,7 +132,7 @@
                     <h1>Tus lentes, sin papeleo ni filas.</h1>
                     <p class="lead mt-3 text-secondary">Pide tus lentes desde el celular, sube la foto de tu receta y sigue cada etapa con un código.</p>
                     <p class="mt-4 d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary btn-lg" href="{% url 'catalogo' %}">Ver catálogo →</a>
+                        <a class="btn btn-primary btn-lg" href="{% url 'catalogo' %}">Ver lentes →</a>
                         <a class="btn btn-suave btn-lg" href="{% url 'consultar_estado' %}">Ya tengo un código</a>
                     </p>
                 </div>
@@ -90,8 +154,8 @@
                         <path d="M12 14h0"/>
                     </svg>
                 </div>
-                        <h2 class="h4 mt-2">Encuentra tus lentes</h2>
-                        <p class="text-secondary mb-0">Busca los lentes que necesitas y adjunta tu receta.</p>
+                        <h2 class="h4 mt-2">Solicitar lentes</h2>
+                        <p class="text-secondary mb-0">Encuentra lo qué necesitas y adjunta tu receta.</p>
                     </a>
                 </div>
                 
@@ -130,109 +194,139 @@
                     </a>
                 </div>
             </div>
-            
-
 
         </div>
     </main>
 
-    <!-- MINI CATÁLOGO BOOTSTRAP -->
+
+<!-- MINI CATÁLOGO BOOTSTRAP -->
     <section class="mini-catalogo mt-5">
 
-        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
-            <div>
-                <span class="etiqueta-azul">NUESTRA SELECCIÓN</span>
-                <h2 class="mt-2">Descubre nuestros lentes</h2>
-                <p class="text-secondary mb-0">
-                    Algunos de los modelos disponibles en Óptica Amaru.
-                </p>
+        <div class="container">
+
+            <!-- ENCABEZADO -->
+            <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+                <div>
+                    <span class="etiqueta-azul">NUESTRA SELECCIÓN</span>
+                    <h2 class="mt-2">Descubre nuestros lentes</h2>
+                    <p class="text-secondary mb-0">
+                        Algunos de los modelos disponibles en Óptica Amaru.
+                    </p>
+                </div>
+
+                <a href="{% url 'catalogo' %}" class="btn btn-suave">
+                    Ver catálogo completo →
+                </a>
             </div>
 
-            <a href="{% url 'catalogo' %}" class="btn btn-suave">
-                Ver catálogo completo →
-            </a>
-        </div>
+            <!-- CARRUSEL -->
+            <div id="carruselLentes"
+                class="carousel slide"
+                data-bs-ride="false">
 
-        <div id="carruselLentes" class="carousel slide" data-bs-ride="false">
+                <div class="carousel-inner">
 
-            <div class="carousel-inner">
+                    {% for lente in productos_destacados %}
 
-                {% for lente in productos_destacados %}
+                        {% if forloop.first or forloop.counter0|divisibleby:4 %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <div class="row g-3">
 
-                    {% if forloop.first or forloop.counter0|divisibleby:4 %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <div class="row g-3">
-                    {% endif %}
+                        {% endif %}
 
-                    <div class="col-6 col-lg-3">
-                        <article class="mini-producto h-100">
+                            <div class="col-6 col-lg-3">
 
-                            <a href="{% url 'solicitar_producto' lente.id %}"
-                            class="mini-producto-imagen">
+                                <article class="mini-producto h-100">
 
-                                {% if lente.imagen %}
-                                    <img src="{{ lente.imagen.url }}"
-                                        alt="{{ lente.nombre }}"
-                                        loading="lazy">
-                                {% endif %}
-
-                            </a>
-
-                            <div class="mini-producto-info">
-                                <span class="text-secondary small">
-                                    {{ lente.marca }}
-                                </span>
-
-                                <h3>{{ lente.nombre }}</h3>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <strong>${{ lente.precio }}</strong>
-
+                                    <!-- IMAGEN -->
                                     <a href="{% url 'solicitar_producto' lente.id %}"
-                                    class="mini-producto-boton">
-                                        Ver →
+                                    class="mini-producto-imagen">
+
+                                        {% if lente.imagen %}
+                                            <img src="{{ lente.imagen.url }}"
+                                                alt="{{ lente.nombre }}"
+                                                loading="lazy">
+                                        {% else %}
+                                            <div class="producto-sin-imagen">
+                                                Imagen no disponible
+                                            </div>
+                                        {% endif %}
+
                                     </a>
+
+                                    <!-- INFORMACIÓN -->
+                                    <div class="mini-producto-info">
+
+                                        <span class="text-secondary small">
+                                            {{ lente.marca }}
+                                        </span>
+
+                                        <h3>{{ lente.nombre }}</h3>
+
+                                        <div class="d-flex justify-content-between align-items-center gap-2">
+
+                                            <strong>${{ lente.precio }}</strong>
+
+                                            <a href="{% url 'solicitar_producto' lente.id %}"
+                                            class="mini-producto-boton">
+                                                Ver →
+                                            </a>
+
+                                        </div>
+
+                                    </div>
+
+                                </article>
+
+                            </div>
+
+                        {% if forloop.last or forloop.counter|divisibleby:4 %}
                                 </div>
                             </div>
+                        {% endif %}
 
-                        </article>
-                    </div>
+                    {% empty %}
 
-                    {% if forloop.last or forloop.counter|divisibleby:4 %}
-                            </div>
+                        <div class="text-center py-4">
+                            <p class="text-secondary mb-0">
+                                Pronto tendremos nuevos modelos disponibles.
+                            </p>
                         </div>
-                    {% endif %}
 
-                {% empty %}
-                    <p class="text-secondary">
-                        Pronto tendremos nuevos modelos disponibles.
-                    </p>
-                {% endfor %}
+                    {% endfor %}
+
+                </div>
+
+                <!-- FLECHAS -->
+                {% if productos_destacados|length > 4 %}
+
+                    <button class="carousel-control-prev carrusel-control"
+                            type="button"
+                            data-bs-target="#carruselLentes"
+                            data-bs-slide="prev">
+
+                        <span class="carousel-control-prev-icon"></span>
+                        <span class="visually-hidden">Anterior</span>
+
+                    </button>
+
+                    <button class="carousel-control-next carrusel-control"
+                            type="button"
+                            data-bs-target="#carruselLentes"
+                            data-bs-slide="next">
+
+                        <span class="carousel-control-next-icon"></span>
+                        <span class="visually-hidden">Siguiente</span>
+
+                    </button>
+
+                {% endif %}
 
             </div>
 
-            {% if productos_destacados|length > 4 %}
-                <button class="carousel-control-prev carrusel-control"
-                        type="button"
-                        data-bs-target="#carruselLentes"
-                        data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
-                    <span class="visually-hidden">Anterior</span>
-                </button>
-
-                <button class="carousel-control-next carrusel-control"
-                        type="button"
-                        data-bs-target="#carruselLentes"
-                        data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
-                    <span class="visually-hidden">Siguiente</span>
-                </button>
-            {% endif %}
-
         </div>
+
     </section>
-
-
 
 
     <footer>

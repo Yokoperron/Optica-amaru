@@ -50,6 +50,10 @@ class Solicitud(models.Model):
         blank=True,
         related_name='solicitudes'
     )
+    marco_personalizado = models.TextField(
+    blank=True,
+    default=''
+)
     # blank=True: puede quedar vacío (por ejemplo si el cliente no tiene receta)
     receta = models.FileField(upload_to='recetas/', blank=True)
     filtro_azul = models.BooleanField(default=False)
@@ -64,6 +68,87 @@ class Solicitud(models.Model):
 
     def __str__(self):
         return f"{self.folio} - {self.cliente.nombre}"
+
+
+class PagoSolicitud(models.Model):
+
+    ESTADOS = [
+        ('Pendiente de pago', 'Pendiente de pago'),
+        ('Comprobante enviado', 'Comprobante enviado'),
+        ('Pago confirmado', 'Pago confirmado'),
+        ('Rechazado', 'Rechazado'),
+    ]
+
+    solicitud = models.ForeignKey(
+        Solicitud,
+        on_delete=models.CASCADE,
+        related_name='pagos'
+    )
+
+    monto = models.PositiveIntegerField(
+        null=True,
+        blank=True
+    )
+
+    comprobante = models.FileField(
+        upload_to='pagos/comprobantes/',
+        blank=True
+    )
+
+    fecha_transferencia = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    estado = models.CharField(
+        max_length=30,
+        choices=ESTADOS,
+        default='Pendiente de pago'
+    )
+
+    observacion = models.TextField(blank=True)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    fecha_revision = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    revisado_por = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return f"Pago de {self.solicitud.folio} - {self.estado}"
+
+
+class DatosBancarios(models.Model):
+
+    TIPOS_CUENTA = [
+        ('Cuenta Corriente', 'Cuenta Corriente'),
+        ('Cuenta Vista', 'Cuenta Vista'),
+        ('Cuenta RUT', 'Cuenta RUT'),
+        ('Cuenta de Ahorro', 'Cuenta de Ahorro'),
+    ]
+
+    titular = models.CharField(max_length=150)
+    rut = models.CharField(max_length=12)
+    banco = models.CharField(max_length=100)
+    tipo_cuenta = models.CharField(
+        max_length=30,
+        choices=TIPOS_CUENTA
+    )
+    numero_cuenta = models.CharField(max_length=30)
+    correo = models.EmailField()
+    instrucciones = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.banco} - {self.titular}'
 
 class ProductoLente(models.Model):
     nombre = models.CharField(max_length=150)
@@ -106,7 +191,7 @@ class HorarioAtencion(models.Model):
 
 
 ## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
-
+import uuid
 class Cita(models.Model):
     ESTADOS = [
         ('Pendiente', 'Pendiente'),
@@ -126,9 +211,41 @@ class Cita(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADOS, default='Pendiente')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
+    token_cancelacion = models.UUIDField(
+        null=True,
+        blank=True,
+        editable=False
+    )
+
     class Meta:
         ordering = ['fecha', 'hora']
+
+    def save(self, *args, **kwargs):
+        if not self.token_cancelacion:
+            self.token_cancelacion = uuid.uuid4()
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.cliente.nombre} - {self.fecha} {self.hora}"
 
+
+class BannerInicio(models.Model):
+    titulo = models.CharField(max_length=120, blank=True)
+    subtitulo = models.CharField(max_length=200, blank=True)
+
+    imagen = models.ImageField(upload_to='banners/')
+
+    texto_boton = models.CharField(max_length=50, blank=True)
+    enlace_boton = models.CharField(max_length=300, blank=True)
+
+    orden = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['orden', '-fecha_creacion']
+
+    def __str__(self):
+        return self.titulo or f'Banner {self.id}'

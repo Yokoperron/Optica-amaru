@@ -35,6 +35,11 @@
 
             <div class="collapse navbar-collapse" id="menu">
                 <ul class="navbar-nav ms-auto gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'solicitar' %}">
+                            Solicitar lentes
+                        </a>
+                    </li>
 
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'consultar_estado' %}">
@@ -159,6 +164,43 @@
                     </div>
 
                     {% endfor %}
+                    
+
+<!-- Solicitud de marco personalizado -->
+<article class="producto-card producto-personalizado">
+
+    <div class="producto-imagen d-flex flex-column align-items-center justify-content-center p-4">
+        <span style="font-size: 4rem;">👓</span>
+        <span class="fw-semibold">¿Buscas otro modelo?</span>
+    </div>
+
+    <div class="producto-informacion">
+
+        <span class="producto-marca">SOLICITUD ESPECIAL</span>
+
+        <h3>Un marco diferente</h3>
+
+        <p>
+            ¿No encontraste el modelo que buscas?
+            Cuéntanos qué necesitas y te ayudaremos.
+        </p>
+
+        <div class="producto-pie">
+            <div class="producto-precio">
+                <small>Atención</small>
+                <strong>Personalizada</strong>
+            </div>
+
+            <a href="{% url 'solicitar' %}"
+               class="producto-boton">
+                <span>Solicitar</span>
+                <span aria-hidden="true">→</span>
+            </a>
+        </div>
+
+    </div>
+
+</article>
 
                 </div>
 

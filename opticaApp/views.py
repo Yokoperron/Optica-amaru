@@ -14,6 +14,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_POST
+
 
 from datetime import datetime
 
@@ -34,10 +36,13 @@ def inicio(request):
         publicado=True
     ).exclude(
         imagen=''
-    ).order_by('-id')[:8] # los 6 últimos agregados con imagen
+    ).order_by('-id')[:8]  # los 8 últimos agregados al catálogo que tengan imagen
+
+    banners = BannerInicio.objects.filter(activo=True).order_by('orden', '-fecha_creacion')
 
     return render(request, 'inicio.html', {
-        'productos_destacados': productos_destacados
+        'productos_destacados': productos_destacados,
+        'banners':banners
     })
 
 
@@ -58,7 +63,7 @@ def solicitar(request, producto_id=None):
             publicado=True
         )
     if request.method == 'POST':
-        form = SolicitudForm(request.POST, request.FILES)   # request.FILES trae el archivo de la receta
+        form = SolicitudForm(request.POST,request.FILES,producto_seleccionado=producto_seleccionado)  # request.FILES trae el archivo de la receta
         if form.is_valid():
             datos = form.cleaned_data                        # ya revisados y ordenados (el RUT ya viene como 16482915-4)
             estado_inicial = Estado.objects.order_by('orden').first()    # el primer estado: "Recibida"
@@ -77,6 +82,7 @@ def solicitar(request, producto_id=None):
                     tipo=datos['tipo'],
                     estado=estado_inicial,
                     producto=producto_seleccionado,
+                    marco_personalizado=datos.get('marco_personalizado', '').strip(),
                     filtro_azul=datos['filtro_azul'],
                     indicaciones=datos['indicaciones'],
                     fecha_entrega=date.today() + timedelta(days=7),    # estimamos 7 días
@@ -88,9 +94,14 @@ def solicitar(request, producto_id=None):
                 if datos['receta'] and not datos['sin_receta']:
                     solicitud.receta = datos['receta']
                 solicitud.save()
+                PagoSolicitud.objects.create(
+                    solicitud=solicitud,
+                    estado='Pendiente de pago'
+                )
+
                 return redirect('solicitud_creada', folio=solicitud.folio)
     else:
-        form = SolicitudForm()     # primera vez que entra: formulario vacío
+        form = SolicitudForm(producto_seleccionado=producto_seleccionado)  # primera vez que entra: formulario vacío
 
     # Si hubo errores, el mismo "form" vuelve con lo que escribió y con los mensajes de error
     return render(request, 'solicitar.html', {'form': form, 'producto_seleccionado':producto_seleccionado})
@@ -99,6 +110,83 @@ def solicitar(request, producto_id=None):
 def solicitud_creada(request, folio):
     solicitud = get_object_or_404(Solicitud, folio=folio)
     return render(request, 'solicitud_creada.html', {'solicitud': solicitud})
+
+
+def pagar_solicitud(request, folio):
+    solicitud = get_object_or_404(Solicitud, folio=folio)
+
+    clave_sesion = f'pago_autorizado_{solicitud.folio}'
+
+    # Verificar identidad del cliente
+    if not request.session.get(clave_sesion):
+
+        if request.method == 'POST' and request.POST.get('verificar_rut'):
+
+            rut = rut_valido(request.POST.get('rut', ''))
+
+            if rut and rut == solicitud.cliente.rut:
+                request.session[clave_sesion] = True
+
+                return redirect(
+                    'pagar_solicitud',
+                    folio=folio
+                )
+
+            return render(request, 'pagar_solicitud.html', {
+                'solicitud': solicitud,
+                'autorizado': False,
+                'error_rut': 'El RUT no corresponde al titular de esta solicitud.'
+            })
+
+        return render(request, 'pagar_solicitud.html', {
+            'solicitud': solicitud,
+            'autorizado': False
+        })
+
+    # Obtener o crear el pago
+    pago, creado = PagoSolicitud.objects.get_or_create(
+        solicitud=solicitud,
+        defaults={'estado': 'Pendiente de pago'}
+    )
+
+    datos_bancarios = DatosBancarios.objects.filter(
+        activo=True
+    ).first()
+
+    if request.method == 'POST':
+
+        if pago.estado == 'Pago confirmado':
+            messages.error(request, 'Este pago ya fue confirmado.')
+            return redirect('pagar_solicitud', folio=folio)
+
+        form = ComprobantePagoForm(
+            request.POST,
+            request.FILES,
+            instance=pago
+        )
+
+        if form.is_valid():
+            pago = form.save(commit=False)
+            pago.estado = 'Comprobante enviado'
+            pago.save()
+
+            messages.success(
+                request,
+                'Comprobante enviado. La óptica revisará tu transferencia.'
+            )
+
+            return redirect('pagar_solicitud', folio=folio)
+
+    else:
+        form = ComprobantePagoForm(instance=pago)
+
+    return render(request, 'pagar_solicitud.html', {
+        'solicitud': solicitud,
+        'pago': pago,
+        'datos_bancarios': datos_bancarios,
+        'form': form,
+        'autorizado': True
+    })
 
 
 # HU06: el cliente consulta cómo va su solicitud con su RUT y su código
@@ -128,6 +216,55 @@ def consultar_estado(request):
 # @login_required = "solo si inició sesión". Si no, lo manda al login del admin (LOGIN_URL en settings.py)
 
 
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+@require_POST
+def revisar_pago(request, idPago):
+
+    pago = get_object_or_404(
+        PagoSolicitud.objects.select_related('solicitud'),
+        pk=idPago
+    )
+
+    accion = request.POST.get('accion')
+    observacion = request.POST.get('observacion', '').strip()
+
+    if pago.estado != 'Comprobante enviado' or not pago.comprobante:
+        messages.error(
+            request,
+            'Este pago no tiene un comprobante pendiente de revisión.'
+        )
+        return redirect('lista_solicitudes')
+
+    if accion == 'confirmar':
+        pago.estado = 'Pago confirmado'
+        mensaje = 'El pago fue confirmado correctamente.'
+
+    elif accion == 'rechazar':
+        if not observacion:
+            messages.error(
+                request,
+                'Debes indicar el motivo del rechazo.'
+            )
+            return redirect('lista_solicitudes')
+
+        pago.estado = 'Rechazado'
+        mensaje = 'El comprobante fue rechazado.'
+
+    else:
+        messages.error(request, 'Acción no válida.')
+        return redirect('lista_solicitudes')
+
+    pago.observacion = observacion
+    pago.fecha_revision = timezone.now()
+    pago.revisado_por = request.user
+    pago.save()
+
+    messages.success(request, mensaje)
+
+    return redirect('lista_solicitudes')
+
+
 # HU03: cola de solicitudes con indicadores y buscador
 @login_required
 def lista_solicitudes(request):
@@ -149,30 +286,82 @@ def lista_solicitudes(request):
     productos = ProductoLente.objects.all().order_by('-id')
     citas = Cita.objects.select_related('cliente').order_by('-fecha', '-hora')
 
+    pagos_pendientes = PagoSolicitud.objects.select_related(
+    'solicitud',
+    'solicitud__cliente'
+).filter(
+    estado='Comprobante enviado'
+).order_by('-fecha_creacion')
+
     return render(request, 'lista_solicitudes.html', {
         'solicitudes': solicitudes, 'q': q,
         'activas': activas, 'en_taller': en_taller, 'listas': listas, 'con_demora': con_demora, 'productos': productos,
-'citas': citas, 'estados_cita': Cita.ESTADOS,})
+'citas': citas, 'estados_cita': Cita.ESTADOS, 'pagos_pendientes': pagos_pendientes,})
 
 
 # Detalle de una solicitud. Aquí el personal también cambia el estado.
+
 @login_required
+@user_passes_test(lambda user: user.is_staff)
 def detalle_solicitud(request, idSolicitud):
+
     solicitud = get_object_or_404(
         Solicitud.objects.select_related(
-            'cliente', 'tipo', 'estado'), 
-            pk=idSolicitud
-            )
+            'cliente', 'tipo', 'estado'
+        ),
+        pk=idSolicitud
+    )
 
     if request.method == 'POST':
-        form = EstadoForm(request.POST, instance=solicitud)   # instance = "edita ESTA solicitud"
+        form = EstadoForm(request.POST, instance=solicitud)
+
         if form.is_valid():
+
+            nuevo_estado = form.cleaned_data['estado']
+
+            if nuevo_estado.orden >= 3:
+
+                pago_confirmado = PagoSolicitud.objects.filter(
+                    solicitud=solicitud,
+                    estado='Pago confirmado'
+                ).exists()
+
+                if not pago_confirmado:
+                    messages.error(
+                        request,
+                        'No puedes avanzar esta solicitud a fabricación '
+                        'porque todavía no tiene un pago confirmado.'
+                    )
+
+                    return redirect(
+                        'detalle_solicitud',
+                        idSolicitud=idSolicitud
+                    )
+
             form.save()
-            return redirect('detalle_solicitud', idSolicitud=idSolicitud)
+
+            messages.success(
+                request,
+                'El estado de la solicitud se actualizó correctamente.'
+            )
+
+            return redirect(
+                'detalle_solicitud',
+                idSolicitud=idSolicitud
+            )
+
     else:
         form = EstadoForm(instance=solicitud)
 
-    return render(request, 'detalle_solicitud.html', {'solicitud': solicitud, 'form': form})
+    return render(
+        request,
+        'detalle_solicitud.html',
+        {
+            'solicitud': solicitud,
+            'form': form
+        }
+    )
+
 
 # Pantalla del personal para editar el horario de atención (tabla HorarioAtencion).
 
@@ -534,3 +723,113 @@ def agregar_lente(request):
         'form': form
     })
 
+# ==========================================
+# CANCELACIÓN DE HORAS POR CLIENTES
+# ==========================================
+
+def buscar_cita_cancelacion(request):
+    cita = None
+    error = ''
+    puede_cancelar = False
+
+    if request.method == 'POST':
+        rut = rut_valido(request.POST.get('rut', '').strip())
+        token = request.POST.get('token', '').strip()
+
+        cita = Cita.objects.select_related('cliente').filter(
+            cliente__rut=rut,
+            token_cancelacion=token
+        ).first() if rut and token else None
+
+        if not cita:
+            error = 'No encontramos una reserva con esos datos.'
+
+        elif request.POST.get('accion') == 'cancelar':
+            fecha_hora = datetime.combine(cita.fecha, cita.hora)
+            ahora = timezone.localtime().replace(tzinfo=None)
+
+            if cita.estado not in ('Pendiente', 'Confirmada'):
+                messages.error(request, 'Esta reserva ya no se puede cancelar.')
+            elif fecha_hora <= ahora:
+                messages.error(request, 'No puedes cancelar una hora que ya pasó.')
+            else:
+                cita.estado = 'Cancelada'
+                cita.save(update_fields=['estado'])
+                messages.success(request, '¡Tu hora fue cancelada correctamente!')
+                cita = None
+
+        if cita:
+            fecha_hora = datetime.combine(cita.fecha, cita.hora)
+            ahora = timezone.localtime().replace(tzinfo=None)
+
+            puede_cancelar = (
+                cita.estado in ('Pendiente', 'Confirmada')
+                and fecha_hora > ahora
+            )
+
+    return render(request, 'buscar_cita_cancelacion.html', {
+        'cita': cita,
+        'error': error,
+        'puede_cancelar': puede_cancelar
+    })
+
+
+# ==========================================
+# Banners
+# ==========================================
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+def administrar_banners(request):
+    banner_editar = None
+
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        banner_id = request.POST.get('banner_id')
+
+        if accion in ('activar', 'eliminar'):
+            banner = get_object_or_404(BannerInicio, id=banner_id)
+
+            if accion == 'activar':
+                banner.activo = not banner.activo
+                banner.save(update_fields=['activo'])
+                messages.success(request, 'Estado del banner actualizado.')
+
+            elif accion == 'eliminar':
+                banner.delete()
+                messages.success(request, 'Banner eliminado correctamente.')
+
+            return redirect('administrar_banners')
+
+        banner_id = request.POST.get('banner_id')
+        instancia = None
+
+        if banner_id:
+            instancia = get_object_or_404(BannerInicio, id=banner_id)
+
+        form = BannerInicioForm(
+            request.POST,
+            request.FILES,
+            instance=instancia
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Banner guardado correctamente.')
+            return redirect('administrar_banners')
+
+    else:
+        editar_id = request.GET.get('editar')
+
+        if editar_id:
+            banner_editar = get_object_or_404(BannerInicio, id=editar_id)
+
+        form = BannerInicioForm(instance=banner_editar)
+
+    banners = BannerInicio.objects.all()
+
+    return render(request, 'administrar_banners.html', {
+        'form': form,
+        'banners': banners,
+        'banner_editar': banner_editar
+    })

@@ -106,6 +106,8 @@ class SolicitudForm(forms.Form):
         })
     )
 
+    
+
     # ModelChoiceField = una lista que sale de una tabla (aquí, los registros de TipoLente)
     tipo = forms.ModelChoiceField(
         label='Tipo de lente', 
@@ -116,6 +118,16 @@ class SolicitudForm(forms.Form):
     receta = forms.FileField(
         label='Receta', required=False,
         widget=forms.FileInput(attrs={'class': 'form-control', 'accept': '.jpg,.jpeg,.png,.pdf'}))
+    marco_personalizado = forms.CharField(
+    label='Describe el marco que estás buscando',
+    required=False,
+    max_length=500,
+    widget=forms.Textarea(attrs={
+        'class': 'form-control',
+        'rows': 3,
+        'placeholder': 'Ej: Busco un marco negro, rectangular, liviano...'
+    })
+)
     sin_receta = forms.BooleanField(label='No tengo receta vigente', required=False)
     filtro_azul = forms.BooleanField(label='Con filtro de luz azul', required=False)
     indicaciones = forms.CharField(
@@ -127,12 +139,20 @@ class SolicitudForm(forms.Form):
         label='Autorizo que Óptica Amaru trate mis datos personales y de salud para atender esta solicitud.',
         error_messages={'required': 'Necesitamos tu autorización para tratar tus datos y poder enviar la solicitud.'})
 
+
+    def __init__(self, *args, producto_seleccionado=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if producto_seleccionado is None:
+            self.fields['marco_personalizado'].required = True
+
     # clean_<campo>: revisa un solo campo. Lo que devuelve es el valor "limpio" que se usará después.
     def clean_rut(self):
         rut = rut_valido(self.cleaned_data['rut'])
         if rut is None:
             raise forms.ValidationError('El RUT no es válido. Revisa el número y el dígito verificador.')
         return rut
+
+  
 
     def clean_receta(self):
         receta = self.cleaned_data.get('receta')
@@ -392,3 +412,84 @@ class ProductoLenteForm(forms.ModelForm):
             })
         }
 
+class ComprobantePagoForm(forms.ModelForm):
+
+    class Meta:
+        model = PagoSolicitud
+        fields = ['comprobante', 'fecha_transferencia']
+
+        widgets = {
+            'comprobante': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.jpg,.jpeg,.png,.pdf'
+            }),
+
+            'fecha_transferencia': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            })
+        }
+
+        labels = {
+            'comprobante': 'Comprobante de transferencia',
+            'fecha_transferencia': 'Fecha de transferencia'
+        }
+
+    def clean_comprobante(self):
+        archivo = self.cleaned_data.get('comprobante')
+
+        if archivo:
+            if not archivo.name.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')):
+                raise forms.ValidationError(
+                    'Solo se permiten imágenes JPG, PNG o documentos PDF.'
+                )
+
+            if archivo.size > 5 * 1024 * 1024:
+                raise forms.ValidationError(
+                    'El comprobante no puede superar los 5 MB.'
+                )
+
+        return archivo
+
+class BannerInicioForm(forms.ModelForm):
+    class Meta:
+        model = BannerInicio
+        fields = [
+            'titulo',
+            'subtitulo',
+            'imagen',
+            'texto_boton',
+            'enlace_boton',
+            'orden',
+            'activo',
+        ]
+
+        widgets = {
+            'titulo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Nueva colección'
+            }),
+            'subtitulo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Descubre nuestros nuevos modelos'
+            }),
+            'imagen': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'texto_boton': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Comprar ahora'
+            }),
+            'enlace_boton': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://...'
+            }),
+            'orden': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0'
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
