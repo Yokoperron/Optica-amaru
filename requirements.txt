@@ -5,3 +5,4 @@ mysqlclient
 Pillow
 whitenoise
 django-cloudinary-storage
+python-dotenv
