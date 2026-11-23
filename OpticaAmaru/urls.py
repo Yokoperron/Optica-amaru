@@ -25,12 +25,16 @@ urlpatterns = [
     path('panel/api/horarios/<int:idHorario>/', api_eliminar_horario, name='api_eliminar_horario'),
     path('panel/api/citas/<int:idCita>/', api_actualizar_cita, name='api_actualizar_cita'),
     path('panel/agregar-lente/',agregar_lente,name='agregar_lente'),
+    path('cancelar-hora',buscar_cita_cancelacion,name='buscar_cita_cancelacion'),
 
     # Personal (pide iniciar sesión)
     path('panel/', lista_solicitudes, name='lista_solicitudes'),                         # HU03
     path('panel/<int:idSolicitud>/', detalle_solicitud, name='detalle_solicitud'),
     path('salir/', LogoutView.as_view(), name = 'salir'), #cuando alguien entre a la direccion, django ejecuta la vista salir.
-    path('panel/horario/', editar_horario, name='editar_horario')
+    path('panel/horario/', editar_horario, name='editar_horario'),
+    path('pago/<str:folio>/',pagar_solicitud,name='pagar_solicitud'),
+    path('panel/pago/<int:idPago>/revisar/',revisar_pago,name='revisar_pago'),
+    path('panel/banners',administrar_banners, name='administrar_banners'),
 ]
 
 # Esto permite abrir las recetas subidas mientras se trabaja en el computador, O algo asi me explico el gepeto
