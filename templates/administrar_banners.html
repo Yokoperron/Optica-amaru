@@ -1,0 +1,109 @@
+
+{% extends 'base.html' %}
+
+{% block titulo %}Administrar banners · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="container py-5">
+
+    <h1 class="mb-2">Carrusel de portada</h1>
+    <p class="text-secondary mb-4">
+        Administra las imágenes promocionales de la página principal.
+    </p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="tarjeta p-4 mb-5">
+        <h2 class="h4 mb-3">
+            {% if banner_editar %}Editar banner{% else %}Agregar banner{% endif %}
+        </h2>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if banner_editar %}
+                <input type="hidden" name="banner_id" value="{{ banner_editar.id }}">
+            {% endif %}
+
+            {{ form.as_p }}
+
+            <button type="submit" class="btn btn-primary">
+                Guardar banner
+            </button>
+
+            {% if banner_editar %}
+                <a href="{% url 'administrar_banners' %}"
+                   class="btn btn-outline-secondary">
+                    Cancelar edición
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <h2 class="h4 mb-3">Banners registrados</h2>
+
+    <div class="row g-4">
+        {% for banner in banners %}
+            <div class="col-md-6">
+                <div class="tarjeta p-3 h-100">
+
+                    {% if banner.imagen %}
+                        <img src="{{ banner.imagen.url }}"
+                             alt="{{ banner.titulo }}"
+                             class="w-100 rounded mb-3"
+                             style="height:180px; object-fit:cover;">
+                    {% endif %}
+
+                    <h3 class="h5">{{ banner.titulo|default:"Sin título" }}</h3>
+                    <p class="text-secondary">{{ banner.subtitulo }}</p>
+
+                    {% if banner.activo %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                    {% endif %}
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+
+                        <a href="?editar={{ banner.id }}"
+                           class="btn btn-outline-primary btn-sm">
+                            Editar
+                        </a>
+
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="banner_id" value="{{ banner.id }}">
+                            <button name="accion" value="activar"
+                                    class="btn btn-outline-secondary btn-sm">
+                                {% if banner.activo %}Desactivar{% else %}Activar{% endif %}
+                            </button>
+                        </form>
+
+                        <form method="POST"
+                              onsubmit="return confirm('¿Eliminar este banner?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="banner_id" value="{{ banner.id }}">
+                            <button name="accion" value="eliminar"
+                                    class="btn btn-outline-danger btn-sm">
+                                Eliminar
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <p class="text-secondary">
+                    Todavía no has agregado banners.
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

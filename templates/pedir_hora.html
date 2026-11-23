@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Pedir una hora · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+
+<div class="mx-auto" style="max-width: 760px;">
+
+    <p class="etiqueta-azul">Reserva de atención</p>
+    <h1 class="mb-2">Pide tu hora</h1>
+    <p class="text-secondary mb-4">
+        Reserva tu examen de la vista o una atención en Óptica Amaru.
+        Elige primero la fecha, luego tu hora y completa tus datos.
+    </p>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <form method="post" action="#fecha-hora" novalidate>
+        {% csrf_token %}
+
+        <!-- PASO 1: ELEGIR FECHA -->
+        <div class="tarjeta mb-3" id="fecha-hora">
+
+            <div class="paso-titulo">
+                <span class="numero">1</span>
+                <h2>Elige una fecha</h2>
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col">
+                    <label class="form-label" for="fecha_sel">Fecha de atención</label>
+                    <input type="date" id="fecha_sel" name="fecha" class="form-control"
+                           value="{{ fecha_sel|date:'Y-m-d' }}"
+                           min="{{ hoy|date:'Y-m-d' }}" max="{{ max_fecha|date:'Y-m-d' }}">
+                    <div class="form-text">Puedes reservar hasta el {{ max_fecha|date:"d/m/Y" }}.</div>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" name="accion" value="ver_horas" class="btn btn-primary">Ver horas</button>
+                </div>
+            </div>
+            {{ form.fecha.errors }}
+
+            {% if fecha_sel %}
+                <hr>
+                <p class="fw-semibold mb-2">Horas del {{ fecha_sel|date:"l j \d\e F" }}</p>
+                {% if agenda %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for item in agenda %}
+                            {% if item.estado == 'libre' %}
+                                <span class="badge text-bg-success">{{ item.hora|time:"H:i" }} · Libre</span>
+                            {% elif item.estado == 'reservada' %}
+                                <span class="badge text-bg-secondary">{{ item.hora|time:"H:i" }} · Reservada</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-danger mb-0">No hay atención ese día. Elige otra fecha.</p>
+                {% endif %}
+            {% endif %}
+
+            <div class="mt-3 p-3 rounded bg-light">
+                <small class="text-secondary">
+                    <strong>Horario de atención:</strong>
+                    {% for h in horario %}{{ h.get_dia_display }} {{ h.hora_inicio|time:"H:i" }}–{{ h.hora_fin|time:"H:i" }}{% if not forloop.last %} · {% endif %}{% empty %}Aún no hay horas disponibles{% endfor %}.
+                    Las reservas están sujetas a disponibilidad.
+                </small>
+            </div>
+
+        </div>
+
+        <!-- PASO 2: DETALLES DE LA ATENCIÓN -->
+        <div class="tarjeta mb-3">
+
+            <div class="paso-titulo">
+                <span class="numero">2</span>
+                <h2>Detalles de tu atención</h2>
+            </div>
+
+            <div class="mb-3">
+                {% if fecha_sel and hay_libres %}
+                    <label class="form-label" for="hora">Hora de atención</label>
+                    <select name="hora" id="hora" class="form-select">
+                        <option value="">Elige una hora</option>
+                        {% for item in agenda %}
+                            {% if item.estado == 'libre' %}
+                                <option value="{{ item.hora|time:'H:i' }}" {% if hora_sel == item.hora %}selected{% endif %}>{{ item.hora|time:"H:i" }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                {% elif fecha_sel and agenda %}
+                    <p class="text-danger mb-0">Todas las horas de ese día están reservadas. Elige otra fecha arriba.</p>
+                {% elif fecha_sel %}
+                    <p class="text-danger mb-0">No hay atención ese día. Elige otra fecha arriba.</p>
+                {% else %}
+                    <p class="text-secondary mb-0">Elige una fecha arriba y presiona «Ver horas» para ver las horas disponibles.</p>
+                {% endif %}
+                {{ form.hora.errors }}
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label" for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>
+                {{ form.motivo }}
+                {{ form.motivo.errors }}
+            </div>
+
+        </div>
+
+        <!-- PASO 3: DATOS DEL CLIENTE -->
+        <div class="tarjeta mb-3">
+
+            <div class="paso-titulo">
+                <span class="numero">3</span>
+                <h2>Tus datos personales</h2>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.rut.id_for_label }}">{{ form.rut.label }}</label>
+                {{ form.rut }}
+                {{ form.rut.errors }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                {{ form.nombre }}
+                {{ form.nombre.errors }}
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label" for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                    {{ form.telefono }}
+                    {{ form.telefono.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label" for="{{ form.contacto.id_for_label }}">{{ form.contacto.label }}</label>
+                {{ form.contacto }}
+                {{ form.contacto.errors }}
+            </div>
+
+        </div>
+
+        <!-- PASO 4: CONFIRMACIÓN -->
+        <div class="tarjeta mb-4">
+
+            <div class="paso-titulo">
+                <span class="numero">4</span>
+                <h2>Confirmación</h2>
+            </div>
+
+            <label class="check mb-2">
+                {{ form.acepta_datos }}
+                <span>{{ form.acepta_datos.label }}</span>
+            </label>
+
+            {{ form.acepta_datos.errors }}
+
+            <p class="text-secondary small mt-3 mb-0">
+                Tus datos serán utilizados para gestionar tu reserva
+                y contactar contigo en relación con tu atención.
+            </p>
+
+            <button type="submit" class="btn btn-primary btn-lg mt-4 w-100">
+                Confirmar reserva ✓
+            </button>
+
+            
+            <div class="text-center mt-3">
+                <label>¿Necesitas cancelar tu hora?</label>
+                <a href="{% url 'buscar_cita_cancelacion' %}" class="text-decoration-none">
+                    Cancelar mi hora
+                </a>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="{% url 'inicio' %}" class="text-decoration-none">
+                    Volver al inicio
+                </a>
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %} 

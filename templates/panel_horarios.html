@@ -1,0 +1,361 @@
+
+{% extends 'base.html' %}
+
+{% block titulo %}Gestión de horarios · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+
+<style>
+    .calendario-contenedor {
+        background: white;
+        border: 1px solid #d9e3f0;
+        border-radius: 14px;
+        padding: 24px;
+        margin-top: 24px;
+    }
+
+    .calendario-descripcion {
+        color: #718096;
+        font-size: 14px;
+    }
+
+    #calendario {
+        margin-top: 24px;
+    }
+
+    .fc {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #102b43;
+    }
+
+    .fc .fc-button-primary {
+        background-color: #0873ae;
+        border-color: #0873ae;
+    }
+
+    .fc .fc-button-primary:hover {
+        background-color: #075b8a;
+        border-color: #075b8a;
+    }
+
+    .fc .fc-timegrid-slot {
+        height: 48px;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        color: #102b43;
+        text-decoration: none;
+        padding: 12px 4px;
+    }
+
+    .fc .fc-timegrid-slot-label {
+        color: #718096;
+        font-size: 12px;
+    }
+
+    .fc .fc-highlight {
+        background: rgba(8, 115, 174, 0.18);
+    }
+
+    .fc-event {
+        border-radius: 5px;
+        padding: 2px 4px;
+    }
+
+    @media (max-width: 768px) {
+        .calendario-contenedor {
+            padding: 12px;
+        }
+
+        .fc .fc-toolbar {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 16px;
+        }
+    }
+</style>
+
+<div>
+    <p class="text-primary fw-bold small mb-1">ADMINISTRACIÓN</p>
+    <h1 class="fw-bold">Gestión de horarios</h1>
+    <p class="calendario-descripcion">
+        Organiza los horarios de atención de Óptica Amaru.
+    </p>
+</div>
+
+<div class="calendario-contenedor">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold mb-1">Calendario semanal</h4>
+            <p class="calendario-descripcion mb-0">
+                Selecciona un espacio del calendario para configurar un horario de atención.
+            </p>
+        </div>
+    </div>
+
+    <div id="calendario"></div>
+
+    <div class="modal fade" id="modalHorario" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold">Nuevo horario de atención</h5>
+                    <small class="text-secondary">
+                        Configura el bloque seleccionado
+                    </small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="errorHorario" class="alert alert-danger d-none" role="alert"></div>
+                <input type="hidden" id="csrfHorario" value="{{ csrf_token }}">
+
+                <div class="p-3 rounded-3 mb-3" style="background: #edf5fc;">
+                    <label class="small text-secondary">Día seleccionado</label>
+                    <h6 class="fw-bold mb-2" id="diaSeleccionado"></h6>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <div>
+                            <small class="text-secondary">Inicio</small>
+                            <h4 class="fw-bold mb-0" id="horaInicio"></h4>
+                        </div>
+
+                        <span class="text-secondary">—</span>
+
+                        <div>
+                            <small class="text-secondary">Término</small>
+                            <h4 class="fw-bold mb-0" id="horaFin"></h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Duración de cada atención
+                    </label>
+
+                    <select id="duracionHorario" class="form-select">
+                        <option value="15">15 minutos</option>
+                        <option value="30" selected>30 minutos</option>
+                        <option value="45">45 minutos</option>
+                        <option value="60">60 minutos</option>
+                    </select>
+
+                    <small class="text-secondary">
+                        Define cuánto tiempo se reservará para cada cliente.
+                    </small>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn btn-primary" id="confirmarHorario">
+                    Aceptar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</div>
+
+{{ horarios|json_script:"horarios-data" }}
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const calendarioEl = document.getElementById('calendario');
+    const modalEl = document.getElementById('modalHorario');
+    const aceptarBtn = document.getElementById('confirmarHorario');
+    const errorEl = document.getElementById('errorHorario');
+
+    if (!calendarioEl || !modalEl || !aceptarBtn) {
+        console.error('No se encontraron los elementos necesarios del calendario.');
+        return;
+    }
+    if (!window.FullCalendar) {
+        calendarioEl.innerHTML = '<div class="alert alert-danger">No se pudo cargar FullCalendar. Revisa tu conexión a Internet.</div>';
+        return;
+    }
+    if (!window.bootstrap || !bootstrap.Modal) {
+        calendarioEl.insertAdjacentHTML('beforebegin',
+            '<div class="alert alert-danger">No se pudo cargar Bootstrap JS. Revisa base.html.</div>');
+        console.error('Bootstrap Modal no está disponible.');
+        return;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    let seleccionActual = null;
+
+    const csrfToken = () => {
+        const row = document.cookie.split('; ').find(x => x.startsWith('csrftoken='));
+        if (row) return decodeURIComponent(row.split('=').slice(1).join('='));
+        return document.getElementById('csrfHorario')?.value || '';
+    };
+
+    function mostrarError(mensaje) {
+        errorEl.textContent = mensaje;
+        errorEl.classList.remove('d-none');
+    }
+    function limpiarError() {
+        errorEl.textContent = '';
+        errorEl.classList.add('d-none');
+    }
+
+    async function enviar(url, datos = {}) {
+        const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken()
+            },
+            body: JSON.stringify(datos)
+        });
+        const tipo = response.headers.get('content-type') || '';
+        if (!tipo.includes('application/json')) {
+            throw new Error('El servidor no devolvió JSON. Puede que tu sesión haya expirado o que Django haya rechazado el CSRF. Revisa el terminal de Django.');
+        }
+        const result = await response.json();
+        if (!response.ok || result.ok !== true) {
+            throw new Error(result.error || `Error del servidor (HTTP ${response.status}).`);
+        }
+        return result;
+    }
+
+    const horariosData = JSON.parse(document.getElementById('horarios-data').textContent);
+    const eventos = horariosData.map(h => ({
+        id: String(h.id),
+        title: 'Atención',
+        daysOfWeek: [(Number(h.dia) + 1) % 7],
+        startTime: h.hora_inicio,
+        endTime: h.hora_fin,
+        backgroundColor: '#0873ae',
+        borderColor: '#0873ae',
+        extendedProps: { duracion: h.duracion_min }
+    }));
+
+    const calendar = new FullCalendar.Calendar(calendarioEl, {
+        initialView: 'timeGridWeek',
+        locale: 'es',
+        firstDay: 1,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridWeek,timeGridDay'
+        },
+        buttonText: { today: 'Hoy', week: 'Semana', day: 'Día' },
+        allDaySlot: false,
+        selectable: true,
+        selectMirror: true,
+        selectMinDistance: 0,
+        slotDuration: '00:30:00',
+        snapDuration: '00:15:00',
+        slotLabelInterval: '01:00',
+        slotMinTime: '08:00:00',
+        slotMaxTime: '21:00:00',
+        nowIndicator: true,
+        height: 'auto',
+        events: eventos,
+
+        select(info) {
+            limpiarError();
+            // Usar la fecha/hora de pared que entrega FullCalendar.
+            // No usar getDay()/getHours(): pueden cambiar de día por la zona horaria del navegador.
+            const fechaLocal = info.startStr.slice(0, 10); // YYYY-MM-DD
+            const [anio, mes, dia] = fechaLocal.split('-').map(Number);
+            const fechaUTC = new Date(Date.UTC(anio, mes - 1, dia));
+            const diaJS = fechaUTC.getUTCDay(); // domingo=0 ... sábado=6
+            const diaNumero = (diaJS + 6) % 7; // Django: lunes=0 ... domingo=6
+            const inicio = info.startStr.slice(11, 16);
+            const fin = info.endStr.slice(11, 16);
+            const diaTexto = new Intl.DateTimeFormat('es-CL', {
+                weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC'
+            }).format(fechaUTC);
+
+            seleccionActual = { dia: diaNumero, hora_inicio: inicio, hora_fin: fin };
+            document.getElementById('diaSeleccionado').textContent =
+                diaTexto.charAt(0).toUpperCase() + diaTexto.slice(1);
+            document.getElementById('horaInicio').textContent = inicio;
+            document.getElementById('horaFin').textContent = fin;
+            document.getElementById('duracionHorario').value = '30';
+            modal.show();
+            calendar.unselect();
+        },
+
+        eventClick(info) {
+            if (!confirm('¿Quieres desactivar este bloque de atención?')) return;
+            enviar(`/panel/api/horarios/${encodeURIComponent(info.event.id)}/`)
+                .then(() => info.event.remove())
+                .catch(error => alert(error.message));
+        }
+    });
+    calendar.render();
+
+    aceptarBtn.addEventListener('click', async event => {
+        event.preventDefault();
+        limpiarError();
+        if (!seleccionActual) {
+            mostrarError('Selecciona primero un bloque del calendario.');
+            return;
+        }
+
+        const datos = {
+            ...seleccionActual,
+            duracion_min: Number(document.getElementById('duracionHorario').value)
+        };
+        aceptarBtn.disabled = true;
+        aceptarBtn.textContent = 'Guardando...';
+
+        try {
+            const resultado = await enviar('{% url "api_guardar_horario" %}', datos);
+            calendar.addEvent({
+                id: String(resultado.id),
+                title: 'Atención',
+                daysOfWeek: [(Number(datos.dia) + 1) % 7],
+                startTime: datos.hora_inicio,
+                endTime: datos.hora_fin,
+                backgroundColor: '#0873ae',
+                borderColor: '#0873ae',
+                extendedProps: { duracion: datos.duracion_min }
+            });
+            seleccionActual = null;
+            modal.hide();
+        } catch (error) {
+            console.error('No se pudo guardar el horario:', error);
+            mostrarError(error.message || 'Ocurrió un error al guardar el horario.');
+        } finally {
+            aceptarBtn.disabled = false;
+            aceptarBtn.textContent = 'Aceptar';
+        }
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', () => {
+        seleccionActual = null;
+        limpiarError();
+    });
+});
+</script>
+
+{% endblock %}

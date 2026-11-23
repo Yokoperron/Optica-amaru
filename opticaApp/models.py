@@ -1,0 +1,251 @@
+from django.db import models
+from django.core.exceptions import ValidationError
+
+
+class TipoLente(models.Model):
+    idTipoLente = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=100)      # Ej: "Lentes de lectura", "Multifocales"
+
+    def __str__(self):
+        return self.nombre
+
+
+class Estado(models.Model):
+    idEstado = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=50)       # Ej: "Recibida", "En taller", "Lista para retiro" y vieja qla te odio yiaa
+    orden = models.IntegerField()                  # 1, 2, 3... sirve para dibujar la línea de tiempo
+
+    def __str__(self):
+        return self.nombre
+
+
+class Cliente(models.Model):
+    idCliente = models.AutoField(primary_key=True)
+    rut = models.CharField(max_length=10, unique=True)   
+    nombre = models.CharField(max_length=120)
+    contacto = models.CharField(max_length=20)             # WhatsApp, Llamada o Correo, esta wea en realidad es algo por estar nma porq nose si vamos a trabajar con el wp de la tia
+    telefono = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    # El cliente tiene que aceptar que usemos sus datos (incluye su receta, que es un dato de salud)
+    acepta_datos = models.BooleanField(default=False)
+
+    def rut_oculto(self):
+        # Para las tablas del personal: 16482915-4 se muestra como 16.***.915-4 mas que nd para recalcar las weas q pusimos de seguridad y leyes, el tema de los datos personales y weas xd
+        return self.rut[:2] + ".***." + self.rut[-5:]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.rut})"
+
+
+class Solicitud(models.Model):
+    idSolicitud = models.AutoField(primary_key=True)
+    folio = models.CharField(max_length=12, unique=True)   # el código de seguimiento, ej: AMR-4F7K2Q
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='solicitudes')
+    tipo = models.ForeignKey(TipoLente, on_delete=models.CASCADE, related_name='solicitudes')
+    estado = models.ForeignKey(Estado, on_delete=models.CASCADE, related_name='solicitudes')
+    producto = models.ForeignKey(
+        'ProductoLente',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitudes'
+    )
+    marco_personalizado = models.TextField(
+    blank=True,
+    default=''
+)
+    # blank=True: puede quedar vacío (por ejemplo si el cliente no tiene receta)
+    receta = models.FileField(upload_to='recetas/', blank=True)
+    filtro_azul = models.BooleanField(default=False)
+    indicaciones = models.TextField(blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)   # pa que se cree solo la fecha y hora cuando se crea la solicitud
+    fecha_entrega = models.DateField(null=True, blank=True)
+    direccion = models.CharField(max_length=200)
+    comuna = models.CharField(max_length=100)
+    ciudad = models.CharField(max_length=100)
+    referencia = models.CharField(max_length=200, blank=True)
+
+
+    def __str__(self):
+        return f"{self.folio} - {self.cliente.nombre}"
+
+
+class PagoSolicitud(models.Model):
+
+    ESTADOS = [
+        ('Pendiente de pago', 'Pendiente de pago'),
+        ('Comprobante enviado', 'Comprobante enviado'),
+        ('Pago confirmado', 'Pago confirmado'),
+        ('Rechazado', 'Rechazado'),
+    ]
+
+    solicitud = models.ForeignKey(
+        Solicitud,
+        on_delete=models.CASCADE,
+        related_name='pagos'
+    )
+
+    monto = models.PositiveIntegerField(
+        null=True,
+        blank=True
+    )
+
+    comprobante = models.FileField(
+        upload_to='pagos/comprobantes/',
+        blank=True
+    )
+
+    fecha_transferencia = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    estado = models.CharField(
+        max_length=30,
+        choices=ESTADOS,
+        default='Pendiente de pago'
+    )
+
+    observacion = models.TextField(blank=True)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    fecha_revision = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    revisado_por = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return f"Pago de {self.solicitud.folio} - {self.estado}"
+
+
+class DatosBancarios(models.Model):
+
+    TIPOS_CUENTA = [
+        ('Cuenta Corriente', 'Cuenta Corriente'),
+        ('Cuenta Vista', 'Cuenta Vista'),
+        ('Cuenta RUT', 'Cuenta RUT'),
+        ('Cuenta de Ahorro', 'Cuenta de Ahorro'),
+    ]
+
+    titular = models.CharField(max_length=150)
+    rut = models.CharField(max_length=12)
+    banco = models.CharField(max_length=100)
+    tipo_cuenta = models.CharField(
+        max_length=30,
+        choices=TIPOS_CUENTA
+    )
+    numero_cuenta = models.CharField(max_length=30)
+    correo = models.EmailField()
+    instrucciones = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.banco} - {self.titular}'
+
+class ProductoLente(models.Model):
+    nombre = models.CharField(max_length=150)
+    marca = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+    precio = models.PositiveIntegerField()
+    imagen = models.ImageField(upload_to='lentes/')
+    stock = models.PositiveIntegerField(default=0)
+    publicado = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre
+
+# HORARIO ATENCION 
+
+# Horario de atención semanal que define el personal. Se repite todas las semanas:
+# "Lunes 13:00-13:30" vale para todos los lunes. (Para días cerrados puntuales,
+# como un feriado, habría que agregar una tabla aparte.)
+
+class HorarioAtencion(models.Model):
+    DIAS = [(0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'), (3, 'Jueves'),
+            (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo')] # mismo orden que date.weekday()
+    dia = models.IntegerField(choices=DIAS)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+    duracion_min = models.PositiveIntegerField(default=30)   # minutos por hora médica
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['dia', 'hora_inicio'] # esto es equivalente al order by en sql entrega la tabla ordenada 
+
+    def clean(self):
+        # Validación que se ejecuta al guardar desde un formulario o desde /admin/
+        if self.hora_inicio and self.hora_fin and self.hora_fin <= self.hora_inicio:
+            raise ValidationError('La hora de término debe ser posterior a la de inicio.')
+
+    def __str__(self):
+        # Texto con que se ve cada fila, por ejemplo: "Lunes 13:00-13:30"
+        return f"{self.get_dia_display()} {self.hora_inicio:%H:%M}-{self.hora_fin:%H:%M}"
+
+
+## DE AQUI HACIA ABAJO ESTA TODO EN RELACION A PEDIR UNA HORA!
+import uuid
+class Cita(models.Model):
+    ESTADOS = [
+        ('Pendiente', 'Pendiente'),
+        ('Confirmada', 'Confirmada'),
+        ('Cancelada', 'Cancelada'),
+        ('Realizada', 'Realizada'),
+    ]
+
+    idCita = models.AutoField(primary_key=True)
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.CASCADE, related_name='citas'
+    )
+    fecha = models.DateField()
+    hora = models.TimeField()
+    motivo = models.CharField(max_length=150)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='Pendiente')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    token_cancelacion = models.UUIDField(
+        null=True,
+        blank=True,
+        editable=False
+    )
+
+    class Meta:
+        ordering = ['fecha', 'hora']
+
+    def save(self, *args, **kwargs):
+        if not self.token_cancelacion:
+            self.token_cancelacion = uuid.uuid4()
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.cliente.nombre} - {self.fecha} {self.hora}"
+
+
+class BannerInicio(models.Model):
+    titulo = models.CharField(max_length=120, blank=True)
+    subtitulo = models.CharField(max_length=200, blank=True)
+
+    imagen = models.ImageField(upload_to='banners/')
+
+    texto_boton = models.CharField(max_length=50, blank=True)
+    enlace_boton = models.CharField(max_length=300, blank=True)
+
+    orden = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['orden', '-fecha_creacion']
+
+    def __str__(self):
+        return self.titulo or f'Banner {self.id}'

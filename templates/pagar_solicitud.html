@@ -1,0 +1,101 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pago · Óptica Amaru</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/amaru.css' %}" rel="stylesheet">
+</head>
+<body>
+
+<div class="container py-5" style="max-width: 760px;">
+{% if not autorizado %}
+
+    <div class="card p-4">
+        <h2 class="h4">Verifica tu identidad</h2>
+
+        <p>
+            Para consultar los datos de pago de la solicitud
+            {{ solicitud.folio }}, ingresa el RUT del titular.
+        </p>
+
+        {% if error_rut %}
+            <div class="alert alert-danger">
+                {{ error_rut }}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <input
+                type="text"
+                name="rut"
+                class="form-control mb-3"
+                placeholder="Ej: 12345678-9"
+                required
+            >
+
+            <button
+                type="submit"
+                name="verificar_rut"
+                value="1"
+                class="btn btn-primary">
+                Verificar identidad
+            </button>
+        </form>
+    </div>
+
+{% else %}
+    <p class="text-primary fw-semibold">ÓPTICA AMARU</p>
+    <h1>Pago de tu solicitud</h1>
+
+    <p>Folio: <strong>{{ solicitud.folio }}</strong></p>
+
+    <div class="card p-4 mb-4">
+        <h2 class="h5">Datos bancarios</h2>
+
+        {% if datos_bancarios %}
+            <p><strong>Banco:</strong> {{ datos_bancarios.banco }}</p>
+            <p><strong>Titular:</strong> {{ datos_bancarios.titular }}</p>
+            <p><strong>RUT:</strong> {{ datos_bancarios.rut }}</p>
+            <p><strong>Tipo de cuenta:</strong> {{ datos_bancarios.tipo_cuenta }}</p>
+            <p><strong>Número:</strong> {{ datos_bancarios.numero_cuenta }}</p>
+            <p><strong>Correo:</strong> {{ datos_bancarios.correo }}</p>
+            <p>{{ datos_bancarios.instrucciones }}</p>
+        {% else %}
+            <div class="alert alert-warning">
+                Los datos bancarios todavía no están configurados.
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card p-4 mb-4">
+        <h2 class="h5">Enviar comprobante</h2>
+
+        <p>Estado actual: <strong>{{ pago.estado }}</strong></p>
+
+        {% if pago.estado != 'Pago confirmado' %}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {{ form.as_p }}
+
+                <button type="submit" class="btn btn-primary">
+                    Enviar comprobante
+                </button>
+            </form>
+        {% else %}
+            <div class="alert alert-success">
+                Tu pago ha sido confirmado por Óptica Amaru.
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+</div>
+
+</body>
+</html>

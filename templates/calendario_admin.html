@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Calendario de citas · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <p class="etiqueta-azul mb-1">Administración de atención</p>
+        <h1 class="mb-1">Calendario de citas</h1>
+        <p class="text-secondary mb-0">Las reservas se cargan directamente desde la base de datos.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'lista_solicitudes' %}" class="btn btn-outline-secondary">Volver al panel</a>
+        <a href="{% url 'editar_horario' %}" class="btn btn-primary">Configurar horarios</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="tarjeta h-100"><div class="text-secondary small">Pendientes</div><div class="fs-2 fw-bold" id="stat-pendientes">{{ pendientes }}</div></div></div>
+    <div class="col-6 col-lg-3"><div class="tarjeta h-100"><div class="text-secondary small">Confirmadas</div><div class="fs-2 fw-bold text-success" id="stat-confirmadas">{{ confirmadas }}</div></div></div>
+    <div class="col-6 col-lg-3"><div class="tarjeta h-100"><div class="text-secondary small">Realizadas</div><div class="fs-2 fw-bold text-primary" id="stat-realizadas">{{ realizadas }}</div></div></div>
+    <div class="col-6 col-lg-3"><div class="tarjeta h-100"><div class="text-secondary small">Canceladas</div><div class="fs-2 fw-bold text-secondary" id="stat-canceladas">{{ canceladas }}</div></div></div>
+</div>
+
+<div class="tarjeta mb-3">
+    <div class="d-flex flex-wrap gap-3 small mb-3">
+        <span><span class="badge" style="background:#d97706">&nbsp;</span> Pendiente</span>
+        <span><span class="badge" style="background:#16845b">&nbsp;</span> Confirmada</span>
+        <span><span class="badge" style="background:#2563eb">&nbsp;</span> Realizada</span>
+        <span><span class="badge" style="background:#64748b">&nbsp;</span> Cancelada</span>
+    </div>
+    <div id="calendar"></div>
+    <p class="text-secondary small mt-3 mb-0">Selecciona un espacio libre para crear una cita. También puedes seleccionar una cita para cambiar su estado o arrastrarla a otro horario disponible.</p>
+</div>
+
+<div class="modal fade" id="citaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalle de la cita</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-3">
+                    <dt class="col-4">Cliente</dt><dd class="col-8" id="modal-cliente"></dd>
+                    <dt class="col-4">RUT</dt><dd class="col-8" id="modal-rut"></dd>
+                    <dt class="col-4">Teléfono</dt><dd class="col-8" id="modal-telefono"></dd>
+                    <dt class="col-4">Correo</dt><dd class="col-8" id="modal-email"></dd>
+                    <dt class="col-4">Fecha</dt><dd class="col-8" id="modal-fecha"></dd>
+                    <dt class="col-4">Hora</dt><dd class="col-8" id="modal-hora"></dd>
+                    <dt class="col-4">Motivo</dt><dd class="col-8" id="modal-motivo"></dd>
+                </dl>
+                <label for="modal-estado" class="form-label fw-semibold">Estado de la cita</label>
+                <select id="modal-estado" class="form-select">
+                    <option>Pendiente</option>
+                    <option>Confirmada</option>
+                    <option>Realizada</option>
+                    <option>Cancelada</option>
+                </select>
+                <div id="modal-error" class="alert alert-danger mt-3 d-none mb-0"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="guardar-estado">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nuevaCitaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <form id="form-nueva-cita">
+      <div class="modal-header"><h5 class="modal-title">Reservar este horario</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+      <div class="modal-body">
+        <p class="small text-secondary">Fecha: <strong id="nueva-fecha"></strong> · Hora: <strong id="nueva-hora"></strong></p>
+        <input type="hidden" id="nueva-fecha-valor"><input type="hidden" id="nueva-hora-valor">
+        <div class="mb-2"><label class="form-label" for="nuevo-rut">RUT</label><input class="form-control" id="nuevo-rut" required maxlength="12" placeholder="12.345.678-9"></div>
+        <div class="mb-2"><label class="form-label" for="nuevo-nombre">Nombre completo</label><input class="form-control" id="nuevo-nombre" required maxlength="120"></div>
+        <div class="row g-2"><div class="col-md-6"><label class="form-label" for="nuevo-telefono">Teléfono</label><input class="form-control" id="nuevo-telefono" required maxlength="20"></div><div class="col-md-6"><label class="form-label" for="nuevo-email">Correo</label><input class="form-control" id="nuevo-email" type="email"></div></div>
+        <div class="mb-2 mt-2"><label class="form-label" for="nuevo-contacto">Medio de contacto</label><select class="form-select" id="nuevo-contacto"><option>WhatsApp</option><option>Llamada</option><option>Correo</option></select></div>
+        <div class="mb-2"><label class="form-label" for="nuevo-motivo">Motivo de atención</label><input class="form-control" id="nuevo-motivo" required maxlength="150" placeholder="Ej. Examen de la vista"></div>
+        <div id="nueva-cita-error" class="alert alert-danger d-none mb-0"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary" id="crear-cita-btn">Guardar cita</button></div>
+    </form>
+  </div></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    const modalEl = document.getElementById('citaModal');
+    const modal = new bootstrap.Modal(modalEl);
+    const nuevaModal = new bootstrap.Modal(document.getElementById('nuevaCitaModal'));
+    let eventoSeleccionado = null;
+
+    function csrfToken() {
+        const item = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        return item ? decodeURIComponent(item.split('=')[1]) : '';
+    }
+
+    async function enviar(url, payload) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken()},
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar el cambio.');
+        return data;
+    }
+
+    function actualizarContadores() {
+        fetch('{% url "api_citas" %}')
+            .then(r => r.json())
+            .then(eventos => {
+                const estados = {Pendiente: 0, Confirmada: 0, Realizada: 0, Cancelada: 0};
+                eventos.forEach(e => { const estado = e.extendedProps.estado; if (estado in estados) estados[estado]++; });
+                document.getElementById('stat-pendientes').textContent = estados.Pendiente;
+                document.getElementById('stat-confirmadas').textContent = estados.Confirmada;
+                document.getElementById('stat-realizadas').textContent = estados.Realizada;
+                document.getElementById('stat-canceladas').textContent = estados.Cancelada;
+            });
+    }
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'es',
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        nowIndicator: true,
+        dayMaxEvents: true,
+        headerToolbar: {left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'},
+        buttonText: {today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día', list: 'Lista'},
+        businessHours: {{ franjas_horarias|safe }},
+        slotMinTime: '{{ hora_minima }}',
+        slotMaxTime: '{{ hora_maxima }}',
+        slotDuration: '00:30:00',
+        selectable: true,
+        selectMirror: true,
+        selectAllow: function(info) {
+            return info.start >= new Date(new Date().setHours(0,0,0,0));
+        },
+        select: function(info) {
+            const inicio = info.start;
+            const fecha = [inicio.getFullYear(), String(inicio.getMonth()+1).padStart(2,'0'), String(inicio.getDate()).padStart(2,'0')].join('-');
+            const hora = [String(inicio.getHours()).padStart(2,'0'), String(inicio.getMinutes()).padStart(2,'0')].join(':');
+            document.getElementById('nueva-fecha').textContent = inicio.toLocaleDateString('es-CL');
+            document.getElementById('nueva-hora').textContent = hora;
+            document.getElementById('nueva-fecha-valor').value = fecha;
+            document.getElementById('nueva-hora-valor').value = hora;
+            document.getElementById('nueva-cita-error').classList.add('d-none');
+            calendar.unselect();
+            nuevaModal.show();
+        },
+        events: '{% url "api_citas" %}',
+        eventClick: function(info) {
+            eventoSeleccionado = info.event;
+            const p = info.event.extendedProps;
+            document.getElementById('modal-cliente').textContent = p.cliente;
+            document.getElementById('modal-rut').textContent = p.rut;
+            document.getElementById('modal-telefono').textContent = p.telefono || 'No informado';
+            document.getElementById('modal-email').textContent = p.email || 'No informado';
+            document.getElementById('modal-fecha').textContent = p.fecha;
+            document.getElementById('modal-hora').textContent = p.hora;
+            document.getElementById('modal-motivo').textContent = p.motivo;
+            document.getElementById('modal-estado').value = p.estado;
+            document.getElementById('modal-error').classList.add('d-none');
+            modal.show();
+        },
+        editable: true,
+        eventDurationEditable: false,
+        eventDrop: async function(info) {
+            const fecha = info.event.start;
+            const fechaLocal = [fecha.getFullYear(), String(fecha.getMonth()+1).padStart(2,'0'), String(fecha.getDate()).padStart(2,'0')].join('-');
+            const horaBase = (fecha.getHours() === 0 && fecha.getMinutes() === 0 && info.oldEvent.start) ? info.oldEvent.start : fecha;
+            const hora = [String(horaBase.getHours()).padStart(2,'0'), String(horaBase.getMinutes()).padStart(2,'0')].join(':');
+            try {
+                await enviar(`/panel/api/citas/${info.event.id}/`, {fecha: fechaLocal, hora: hora});
+                calendar.refetchEvents();
+                actualizarContadores();
+            } catch (error) {
+                info.revert();
+                alert(error.message);
+            }
+        }
+    });
+    calendar.render();
+
+    document.getElementById('guardar-estado').addEventListener('click', async function() {
+        if (!eventoSeleccionado) return;
+        const boton = this;
+        boton.disabled = true;
+        try {
+            await enviar(`/panel/api/citas/${eventoSeleccionado.id}/`, {estado: document.getElementById('modal-estado').value});
+            modal.hide();
+            calendar.refetchEvents();
+            actualizarContadores();
+        } catch (error) {
+            const caja = document.getElementById('modal-error');
+            caja.textContent = error.message;
+            caja.classList.remove('d-none');
+        } finally {
+            boton.disabled = false;
+        }
+    });
+
+    document.getElementById('form-nueva-cita').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const boton = document.getElementById('crear-cita-btn');
+        const caja = document.getElementById('nueva-cita-error');
+        boton.disabled = true;
+        caja.classList.add('d-none');
+        const datos = {
+            fecha: document.getElementById('nueva-fecha-valor').value,
+            hora: document.getElementById('nueva-hora-valor').value,
+            rut: document.getElementById('nuevo-rut').value,
+            nombre: document.getElementById('nuevo-nombre').value,
+            telefono: document.getElementById('nuevo-telefono').value,
+            email: document.getElementById('nuevo-email').value,
+            contacto: document.getElementById('nuevo-contacto').value,
+            motivo: document.getElementById('nuevo-motivo').value
+        };
+        try {
+            await enviar('{% url "api_crear_cita" %}', datos);
+            nuevaModal.hide();
+            this.reset();
+            calendar.refetchEvents();
+            actualizarContadores();
+        } catch (error) {
+            caja.textContent = error.message;
+            caja.classList.remove('d-none');
+        } finally {
+            boton.disabled = false;
+        }
+    });
+});
+</script>
+<style>
+#calendar .fc-toolbar-title {font-size:1.25rem;font-weight:700}
+#calendar .fc-button-primary {background:#174c72;border-color:#174c72}
+#calendar .fc-button-primary:hover, #calendar .fc-button-primary:focus {background:#103b5b;border-color:#103b5b}
+#calendar .fc-event {cursor:pointer;padding:2px 3px;border-radius:5px}
+@media(max-width:576px){#calendar .fc-toolbar{display:flex;flex-wrap:wrap;gap:.5rem}#calendar .fc-toolbar-chunk{display:flex;justify-content:center}}
+</style>
+{% endblock %}

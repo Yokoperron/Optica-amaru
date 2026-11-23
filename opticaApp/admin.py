@@ -1,0 +1,60 @@
+from django.contrib import admin
+from opticaApp.models import *
+
+
+
+class TipoLenteAdmin(admin.ModelAdmin):
+    list_display = ('idTipoLente', 'nombre')
+
+class EstadoAdmin(admin.ModelAdmin):
+    list_display = ('idEstado', 'nombre', 'orden')
+
+class ClienteAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'rut', 'contacto', 'telefono', 'email', 'acepta_datos')
+
+class SolicitudAdmin(admin.ModelAdmin):
+    list_display = ('folio', 'cliente', 'tipo', 'estado', 'fecha_creacion', 'fecha_entrega')
+
+class ProductoLenteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'marca', 'precio', 'stock', 'publicado')
+    list_filter = ('marca', 'publicado')
+    search_fields = ('nombre', 'marca')
+    list_editable = ('precio', 'stock', 'publicado')
+
+# horario atencion del administrador
+class HorarioAtencionAdmin(admin.ModelAdmin):
+    list_display = ('dia', 'hora_inicio', 'hora_fin', 'duracion_min', 'activo')
+    list_editable = ('hora_inicio', 'hora_fin', 'duracion_min', 'activo')
+
+
+
+class CitaAdmin(admin.ModelAdmin):
+    list_display = ('idCita', 'cliente', 'fecha', 'hora', 'motivo', 'estado', 'fecha_creacion')
+    list_filter = ('estado', 'fecha')
+    search_fields = ('cliente__nombre', 'cliente__rut', 'motivo')
+    list_editable = ('estado',)
+    ordering = ('fecha', 'hora')
+
+admin.site.register(TipoLente, TipoLenteAdmin)
+admin.site.register(Estado, EstadoAdmin)
+admin.site.register(Cliente, ClienteAdmin)
+admin.site.register(Solicitud, SolicitudAdmin)
+admin.site.register(ProductoLente, ProductoLenteAdmin)
+
+
+admin.site.register(HorarioAtencion, HorarioAtencionAdmin)
+
+admin.site.register(Cita, CitaAdmin)
+
+@admin.register(DatosBancarios)
+class DatosBancariosAdmin(admin.ModelAdmin):
+    list_display = (
+        'banco',
+        'titular',
+        'tipo_cuenta',
+        'numero_cuenta',
+        'activo'
+    )
+
+    list_filter = ('banco', 'activo')
+    search_fields = ('titular', 'rut', 'numero_cuenta')

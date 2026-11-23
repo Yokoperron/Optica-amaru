@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Catálogo | Óptica Amaru</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/amaru.css' %}">
+</head>
+
+<body>
+
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-md barra sticky-top">
+        <div class="container">
+
+            <a class="navbar-brand" href="{% url 'inicio' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Óptica Amaru">
+            </a>
+
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#menu"
+                    aria-controls="menu" aria-expanded="false"
+                    aria-label="Abrir menú">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menu">
+                <ul class="navbar-nav ms-auto gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'solicitar' %}">
+                            Solicitar lentes
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'consultar_estado' %}">
+                            Consultar estado
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link activo" href="{% url 'catalogo' %}">
+                            Catálogo
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'lista_solicitudes' %}">
+                            Personal
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </nav>
+
+    <main class="catalogo-pagina">
+
+        <!-- Encabezado -->
+        <section class="catalogo-encabezado">
+            <div class="container">
+
+                <span class="catalogo-etiqueta">ÓPTICA AMARU</span>
+
+                <h1>Encuentra tus lentes ideales</h1>
+
+                <p>
+                    Explora nuestros modelos y descubre los lentes
+                    que mejor se adaptan a tu estilo.
+                </p>
+
+                <div class="catalogo-detalle">
+                    <span>Calidad</span>
+                    <span class="catalogo-punto">✦</span>
+                    <span>Estilo</span>
+                    <span class="catalogo-punto">✦</span>
+                    <span>Atención personalizada</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Productos -->
+        <section class="catalogo-contenido">
+            <div class="container">
+
+                <div class="catalogo-barra">
+                    <div>
+                        <h2>Nuestros productos</h2>
+                        <p>Conoce los modelos disponibles en nuestra óptica.</p>
+                    </div>
+                </div>
+
+                <div class="catalogo-grid">
+
+                    {% for lente in lentes %}
+
+                    <article class="producto-card">
+
+                        <a href="{% url 'solicitar_producto' lente.id %}"
+                           class="producto-imagen">
+
+                            {% if lente.imagen %}
+                                <img src="{{ lente.imagen.url }}"
+                                     alt="{{ lente.nombre }}"
+                                     loading="lazy">
+                            {% else %}
+                                <div class="producto-sin-imagen">
+                                    <span>Óptica Amaru</span>
+                                    <small>Imagen no disponible</small>
+                                </div>
+                            {% endif %}
+
+                        </a>
+
+                        <div class="producto-informacion">
+
+                            <span class="producto-marca">
+                                {{ lente.marca }}
+                            </span>
+
+                            <h3>
+                                <a href="{% url 'solicitar_producto' lente.id %}">
+                                    {{ lente.nombre }}
+                                </a>
+                            </h3>
+
+                            <div class="producto-pie">
+
+                                <div class="producto-precio">
+                                    <small>Precio</small>
+                                    <strong>${{ lente.precio }}</strong>
+                                </div>
+
+                                <a href="{% url 'solicitar_producto' lente.id %}"
+                                   class="producto-boton"
+                                   aria-label="Solicitar {{ lente.nombre }}">
+                                    <span>Solicitar</span>
+                                    <span aria-hidden="true">→</span>
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                    {% empty %}
+
+                    <div class="catalogo-vacio">
+                        <div class="catalogo-vacio-icono">👓</div>
+                        <h3>Pronto tendremos novedades</h3>
+                        <p>Todavía no hay lentes publicados en nuestro catálogo.</p>
+                    </div>
+
+                    {% endfor %}
+                    
+
+<!-- Solicitud de marco personalizado -->
+<article class="producto-card producto-personalizado">
+
+    <div class="producto-imagen d-flex flex-column align-items-center justify-content-center p-4">
+        <span style="font-size: 4rem;">👓</span>
+        <span class="fw-semibold">¿Buscas otro modelo?</span>
+    </div>
+
+    <div class="producto-informacion">
+
+        <span class="producto-marca">SOLICITUD ESPECIAL</span>
+
+        <h3>Un marco diferente</h3>
+
+        <p>
+            ¿No encontraste el modelo que buscas?
+            Cuéntanos qué necesitas y te ayudaremos.
+        </p>
+
+        <div class="producto-pie">
+            <div class="producto-precio">
+                <small>Atención</small>
+                <strong>Personalizada</strong>
+            </div>
+
+            <a href="{% url 'solicitar' %}"
+               class="producto-boton">
+                <span>Solicitar</span>
+                <span aria-hidden="true">→</span>
+            </a>
+        </div>
+
+    </div>
+
+</article>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-4">
+        <div class="container">
+            <p class="mb-0">© Óptica Amaru. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
