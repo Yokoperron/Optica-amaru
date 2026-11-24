@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 {% block titulo %}{{ solicitud.folio }} · Óptica Amaru{% endblock %}
 
@@ -18,6 +17,9 @@
 
 <div class="row g-4 align-items-start">
     <div class="col-lg-6">
+        {# ROLES: el formulario para cambiar el estado solo se muestra con permiso change_solicitud. #}
+        {# Quien solo puede ver la solicitud no lo ve (y la vista también bloquea el POST).         #}
+        {% if perms.opticaApp.change_solicitud %}
         <form method="post" class="tarjeta">
             {% csrf_token %}
             <h2 class="h4 mb-3">Cambiar estado</h2>
@@ -28,6 +30,7 @@
             </div>
             <button type="submit" class="btn btn-primary btn-lg">Guardar cambio</button>
         </form>
+        {% endif %}
     </div>
 
     <div class="col-lg-6">
