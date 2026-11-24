@@ -37,7 +37,10 @@
                     <div class="display-3">✅</div>
                     <h1 class="mt-2">¡Recibimos tu solicitud!</h1>
                     <p class="lead text-secondary mt-2">Guarda este código. Con tu RUT y este código puedes consultar tu solicitud o realizar el pago cuando lo necesites.</p>
-                    <p class="my-4"><span class="codigo">{{ solicitud.folio }}</span></p>
+                    <div class="my-4">
+                        <span class="codigo codigo-copiable" data-copy-code="{{ solicitud.folio }}">{{ solicitud.folio }}</span>
+                        <span class="copia-ayuda">Haz clic o toca el código para copiarlo</span>
+                    </div>
                     <p class="text-secondary mb-2">Entrega estimada: <strong>{{ solicitud.fecha_entrega|date:"j \d\e F" }}</strong></p>
                     <p class="mb-4">
                         Estado del pago:
@@ -71,7 +74,7 @@
                                     <span class="etiqueta-azul d-block mb-1">Opción B</span>
                                     <h2 class="h5 mb-2">Pagar más tarde</h2>
                                     <p class="text-secondary small mb-3">
-                                        Tu solicitud quedará guardada como <strong>Pendiente de pago</strong>. Puedes pagar después en <strong>Consultar estado</strong> usando tu <strong>RUT</strong> y tu folio <strong>{{ solicitud.folio }}</strong>.
+                                        Tu solicitud quedará guardada como <strong>Pendiente de pago</strong>. Puedes pagar después en <strong>Consultar estado</strong> usando tu <strong>RUT</strong> y tu folio <strong class="codigo-copiable" data-copy-code="{{ solicitud.folio }}">{{ solicitud.folio }}</strong>.
                                     </p>
                                 </div>
                                 <button type="button" class="btn btn-suave btn-lg w-100" data-bs-toggle="collapse" data-bs-target="#infoPagarDespues" aria-expanded="false">
@@ -84,7 +87,7 @@
                     <div class="collapse mt-3 text-start" id="infoPagarDespues">
                         <div class="alert alert-info mb-0">
                             <strong>Tu solicitud sigue registrada.</strong> No necesitas transferir en este momento. Cuando quieras completar el pago, entra a
-                            <a href="{% url 'consultar_estado' %}" class="fw-bold">Consultar estado</a>, ingresa tu <strong>RUT</strong> y el folio <strong>{{ solicitud.folio }}</strong>, y presiona <strong>Realizar pago</strong>.
+                            <a href="{% url 'consultar_estado' %}" class="fw-bold">Consultar estado</a>, ingresa tu <strong>RUT</strong> y el folio <strong class="codigo-copiable" data-copy-code="{{ solicitud.folio }}">{{ solicitud.folio }}</strong>, y presiona <strong>Realizar pago</strong>.
                         </div>
                     </div>
 
@@ -106,5 +109,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/copiar-codigo.js' %}" defer></script>
 </body>
 </html>

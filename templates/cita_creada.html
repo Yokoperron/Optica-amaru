@@ -29,9 +29,12 @@
 
             <h2 class="h5 mb-3">Detalles de tu reserva</h2>
 
-            <div class="d-flex justify-content-between mb-3">
+            <div class="d-flex justify-content-between align-items-start mb-3">
                 <span class="text-secondary">Código de reserva</span>
-                <strong>#{{ cita.idCita }}</strong>
+                <div class="text-end">
+                    <strong class="codigo-copiable" data-copy-code="#{{ cita.idCita }}">#{{ cita.idCita }}</strong>
+                    <span class="copia-ayuda">Haz clic o toca para copiar</span>
+                </div>
             </div>
 
             <hr>
@@ -91,9 +94,10 @@
             </p>
 
             <div class="bg-white rounded p-3 text-center">
-                <strong class="text-break">
+                <strong class="text-break codigo-copiable" data-copy-code="{{ cita.token_cancelacion }}">
                     {{ cita.token_cancelacion }}
                 </strong>
+                <span class="copia-ayuda">Haz clic o toca el código para copiarlo</span>
             </div>
 
             <p class="small text-secondary mt-2 mb-0">

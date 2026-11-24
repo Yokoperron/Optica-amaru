@@ -25,7 +25,10 @@
             <h2 class="h5 mb-3">Detalles de tu reserva</h2>
 
             <div class="bg-light rounded p-3 mb-4">
-                <p><strong>Reserva:</strong> #{{ cita.idCita }}</p>
+                <p>
+                    <strong>Reserva:</strong> <span class="codigo-copiable" data-copy-code="#{{ cita.idCita }}">#{{ cita.idCita }}</span>
+                    <span class="copia-ayuda">Haz clic o toca para copiar</span>
+                </p>
                 <p><strong>Cliente:</strong> {{ cita.cliente.nombre }}</p>
                 <p><strong>Fecha:</strong> {{ cita.fecha|date:"d/m/Y" }}</p>
                 <p><strong>Hora:</strong> {{ cita.hora|time:"H:i" }}</p>

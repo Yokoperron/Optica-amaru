@@ -11,7 +11,8 @@
         </div>
     {% endfor %}
 {% endif %}
-<p class="etiqueta-azul">Solicitud {{ solicitud.folio }}</p>
+<p class="etiqueta-azul mb-1">Solicitud <span class="codigo-copiable" data-copy-code="{{ solicitud.folio }}">{{ solicitud.folio }}</span></p>
+<span class="copia-ayuda mb-2">Haz clic o toca el código para copiarlo</span>
 <h1>{{ solicitud.cliente.nombre }}</h1>
 <p class="my-3"><span class="estado {% if solicitud.estado.orden == 3 or solicitud.estado.orden == 4 %}taller{% elif solicitud.estado.orden >= 5 %}listo{% endif %}">{{ solicitud.estado.nombre }}</span></p>
 
