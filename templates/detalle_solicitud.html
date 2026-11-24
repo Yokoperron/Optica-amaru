@@ -1,17 +1,22 @@
+
 {% extends 'base.html' %}
 {% block titulo %}{{ solicitud.folio }} · Óptica Amaru{% endblock %}
 
 {% block contenido %}
 <p><a href="{% url 'lista_solicitudes' %}" class="fw-semibold text-decoration-none">← Volver a la lista</a></p>
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-3">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
 <p class="etiqueta-azul">Solicitud {{ solicitud.folio }}</p>
 <h1>{{ solicitud.cliente.nombre }}</h1>
 <p class="my-3"><span class="estado {% if solicitud.estado.orden == 3 or solicitud.estado.orden == 4 %}taller{% elif solicitud.estado.orden >= 5 %}listo{% endif %}">{{ solicitud.estado.nombre }}</span></p>
 
 <div class="row g-4 align-items-start">
     <div class="col-lg-6">
-        {# ROLES: el formulario para cambiar el estado solo se muestra con permiso change_solicitud. #}
-        {# Quien solo puede ver la solicitud no lo ve (y la vista también bloquea el POST).         #}
-        {% if perms.opticaApp.change_solicitud %}
         <form method="post" class="tarjeta">
             {% csrf_token %}
             <h2 class="h4 mb-3">Cambiar estado</h2>
@@ -22,7 +27,6 @@
             </div>
             <button type="submit" class="btn btn-primary btn-lg">Guardar cambio</button>
         </form>
-        {% endif %}
     </div>
 
     <div class="col-lg-6">
@@ -85,6 +89,68 @@
                 <tr><th>Entrega estimada</th><td>{{ solicitud.fecha_entrega|date:"d/m/Y" }}</td></tr>
                 {% if solicitud.indicaciones %}<tr><th>Indicaciones</th><td>{{ solicitud.indicaciones }}</td></tr>{% endif %}
             </table>
+        </div>
+
+        <div class="tarjeta mt-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h2 class="h4 mb-0">Estado del pago</h2>
+                <span class="estado {% if pago and pago.estado == 'Pago confirmado' %}listo{% elif pago and pago.estado == 'Comprobante enviado' %}taller{% elif pago and pago.estado == 'Rechazado' %}rechazado{% endif %}">
+                    {% if pago %}{{ pago.estado }}{% else %}Sin registro{% endif %}
+                </span>
+            </div>
+
+            {% if pago %}
+                <table class="table mb-3">
+                    <tr><th>Monto</th><td>{% if pago.monto %}${{ pago.monto }}{% else %}No especificado{% endif %}</td></tr>
+                    {% if pago.fecha_transferencia %}
+                    <tr><th>Fecha transferencia</th><td>{{ pago.fecha_transferencia|date:"d/m/Y" }}</td></tr>
+                    {% endif %}
+                    <tr>
+                        <th>Comprobante</th>
+                        <td>
+                            {% if pago.comprobante %}
+                                <a href="{{ pago.comprobante.url }}" target="_blank" rel="noopener noreferrer">Ver comprobante →</a>
+                            {% else %}
+                                No adjunto
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if pago.observacion %}
+                    <tr><th>Observación</th><td>{{ pago.observacion }}</td></tr>
+                    {% endif %}
+                    {% if pago.revisado_por %}
+                    <tr><th>Revisado por</th><td>{{ pago.revisado_por.username }} ({{ pago.fecha_revision|date:"d/m/Y H:i" }})</td></tr>
+                    {% endif %}
+                </table>
+
+                {% if pago.estado == 'Comprobante enviado' and pago.comprobante %}
+                <div class="row g-2">
+                    <div class="col-sm-6">
+                        <form method="post" action="{% url 'revisar_pago' pago.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="confirmar">
+                            <input type="hidden" name="origen" value="detalle">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Confirmas que verificaste esta transferencia?')">
+                                Confirmar pago
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-sm-6">
+                        <form method="post" action="{% url 'revisar_pago' pago.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="rechazar">
+                            <input type="hidden" name="origen" value="detalle">
+                            <textarea name="observacion" class="form-control mb-2" rows="2" placeholder="Motivo del rechazo" required></textarea>
+                            <button type="submit" class="btn btn-danger w-100">
+                                Rechazar comprobante
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <p class="text-secondary mb-0">No hay registro de pago asociado aún.</p>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -435,21 +435,57 @@ class ComprobantePagoForm(forms.ModelForm):
             'fecha_transferencia': 'Fecha de transferencia'
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['comprobante'].required = True
+        self.fields['comprobante'].error_messages = {
+            'required': 'Debes adjuntar tu comprobante de transferencia (PDF, JPG o PNG).'
+        }
+        self.fields['fecha_transferencia'].widget.attrs['max'] = timezone.localdate().isoformat()
+
     def clean_comprobante(self):
         archivo = self.cleaned_data.get('comprobante')
 
-        if archivo:
-            if not archivo.name.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')):
-                raise forms.ValidationError(
-                    'Solo se permiten imágenes JPG, PNG o documentos PDF.'
-                )
+        if not archivo:
+            raise forms.ValidationError(
+                'Debes adjuntar tu comprobante de transferencia.'
+            )
 
-            if archivo.size > 5 * 1024 * 1024:
-                raise forms.ValidationError(
-                    'El comprobante no puede superar los 5 MB.'
-                )
+        nombre = archivo.name.lower()
+        if not nombre.endswith(('.jpg', '.jpeg', '.png', '.pdf')):
+            raise forms.ValidationError(
+                'Solo se permiten imágenes JPG, JPEG, PNG o documentos PDF.'
+            )
+
+        if archivo.size > 5 * 1024 * 1024:
+            raise forms.ValidationError(
+                'El comprobante no puede superar los 5 MB.'
+            )
+
+        cabecera = archivo.read(8)
+        archivo.seek(0)
+        if nombre.endswith('.pdf') and not cabecera.startswith(b'%PDF-'):
+            raise forms.ValidationError(
+                'El archivo PDF no es válido o está dañado.'
+            )
+        if nombre.endswith('.png') and not cabecera.startswith(b'\x89PNG\r\n\x1a\n'):
+            raise forms.ValidationError(
+                'El archivo PNG no es válido o está dañado.'
+            )
+        if nombre.endswith(('.jpg', '.jpeg')) and not cabecera.startswith(b'\xff\xd8\xff'):
+            raise forms.ValidationError(
+                'El archivo JPG/JPEG no es válido o está dañado.'
+            )
 
         return archivo
+
+    def clean_fecha_transferencia(self):
+        fecha = self.cleaned_data.get('fecha_transferencia')
+        if fecha and fecha > timezone.localdate():
+            raise forms.ValidationError(
+                'La fecha de transferencia no puede ser posterior a hoy.'
+            )
+        return fecha
 
 class BannerInicioForm(forms.ModelForm):
     class Meta:

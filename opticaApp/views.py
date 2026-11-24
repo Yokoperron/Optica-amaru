@@ -16,27 +16,12 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
+
 from datetime import datetime
 
+
+
 from opticaApp.horarios import fecha_maxima, agenda_del_dia, horas_disponibles
-
-from functools import wraps #ayuda a escribir decoradores
-from django.contrib.auth.decorators import permission_required 
-from django.core.exceptions import PermissionDenied# para avisar que no tiene permiso un rol
-
-def permiso_api(codigo):
-    """Como permission_required, pero responde en JSON para las pantallas que usan fetch
-    (el calendario). Si no, el calendario mostraría una página de error ilegible."""
-    def decorador(vista):
-        @wraps(vista)
-        def envoltura(request, *args, **kwargs):
-            # has_perm pregunta si el usuario actual tiene el permiso indicado
-            if not request.user.has_perm(codigo):
-                return JsonResponse({'ok': False, 'error': 'No tienes permiso para esta acción.'}, status=403)
-            return vista(request, *args, **kwargs)
-        return envoltura
-    return decorador
-
 
 def crear_folio():
     # Código de seguimiento al azar: AMR- y 6 letras o números
@@ -111,8 +96,10 @@ def solicitar(request, producto_id=None):
                 solicitud.save()
                 PagoSolicitud.objects.create(
                     solicitud=solicitud,
+                    monto=producto_seleccionado.precio if producto_seleccionado else None,
                     estado='Pendiente de pago'
                 )
+                request.session[f'pago_autorizado_{solicitud.folio}'] = True
 
                 return redirect('solicitud_creada', folio=solicitud.folio)
     else:
@@ -122,13 +109,31 @@ def solicitar(request, producto_id=None):
     return render(request, 'solicitar.html', {'form': form, 'producto_seleccionado':producto_seleccionado})
 
 
+def _obtener_pago_solicitud(solicitud):
+    pago = PagoSolicitud.objects.filter(solicitud=solicitud).order_by('-fecha_creacion').first()
+    if pago is None:
+        pago = PagoSolicitud.objects.create(
+            solicitud=solicitud,
+            monto=solicitud.producto.precio if solicitud.producto else None,
+            estado='Pendiente de pago'
+        )
+    return pago
+
+
 def solicitud_creada(request, folio):
     solicitud = get_object_or_404(Solicitud, folio=folio)
-    return render(request, 'solicitud_creada.html', {'solicitud': solicitud})
+    pago = PagoSolicitud.objects.filter(solicitud=solicitud).order_by('-fecha_creacion').first()
+    return render(request, 'solicitud_creada.html', {
+        'solicitud': solicitud,
+        'pago': pago,
+    })
 
 
 def pagar_solicitud(request, folio):
-    solicitud = get_object_or_404(Solicitud, folio=folio)
+    solicitud = get_object_or_404(
+        Solicitud.objects.select_related('cliente', 'tipo', 'producto', 'estado'),
+        folio=folio
+    )
 
     clave_sesion = f'pago_autorizado_{solicitud.folio}'
 
@@ -159,19 +164,25 @@ def pagar_solicitud(request, folio):
         })
 
     # Obtener o crear el pago
-    pago, creado = PagoSolicitud.objects.get_or_create(
-        solicitud=solicitud,
-        defaults={'estado': 'Pendiente de pago'}
-    )
+    pago = _obtener_pago_solicitud(solicitud)
 
     datos_bancarios = DatosBancarios.objects.filter(
         activo=True
     ).first()
 
+    puede_enviar = pago.estado in ('Pendiente de pago', 'Rechazado')
+
     if request.method == 'POST':
 
         if pago.estado == 'Pago confirmado':
             messages.error(request, 'Este pago ya fue confirmado.')
+            return redirect('pagar_solicitud', folio=folio)
+
+        if pago.estado == 'Comprobante enviado':
+            messages.info(
+                request,
+                'Tu comprobante ya fue enviado y está siendo revisado por la óptica.'
+            )
             return redirect('pagar_solicitud', folio=folio)
 
         form = ComprobantePagoForm(
@@ -183,6 +194,9 @@ def pagar_solicitud(request, folio):
         if form.is_valid():
             pago = form.save(commit=False)
             pago.estado = 'Comprobante enviado'
+            pago.observacion = ''
+            pago.fecha_revision = None
+            pago.revisado_por = None
             pago.save()
 
             messages.success(
@@ -193,20 +207,22 @@ def pagar_solicitud(request, folio):
             return redirect('pagar_solicitud', folio=folio)
 
     else:
-        form = ComprobantePagoForm(instance=pago)
+        form = ComprobantePagoForm(instance=pago) if puede_enviar else None
 
     return render(request, 'pagar_solicitud.html', {
         'solicitud': solicitud,
         'pago': pago,
         'datos_bancarios': datos_bancarios,
         'form': form,
-        'autorizado': True
+        'autorizado': True,
+        'puede_enviar': puede_enviar,
     })
 
 
 # HU06: el cliente consulta cómo va su solicitud con su RUT y su código
 def consultar_estado(request):
     solicitud = None
+    pago = None
     error = ''
 
     if request.method == 'POST':
@@ -216,7 +232,13 @@ def consultar_estado(request):
             folio = form.cleaned_data['folio'].strip().upper()
             if rut is not None:
                 # Se busca una solicitud que tenga ESE código Y que sea de ESE cliente
-                solicitud = Solicitud.objects.filter(folio=folio, cliente__rut=rut).first()
+                solicitud = Solicitud.objects.select_related('cliente', 'tipo', 'estado', 'producto').filter(
+                    folio=folio,
+                    cliente__rut=rut
+                ).first()
+                if solicitud is not None:
+                    pago = PagoSolicitud.objects.filter(solicitud=solicitud).order_by('-fecha_creacion').first()
+                    request.session[f'pago_autorizado_{solicitud.folio}'] = True
         if solicitud is None:
             # Mismo mensaje si falla el RUT o el código, para no dar pistas
             error = 'No encontramos una solicitud con esos datos. Revisa el RUT y el código.'
@@ -224,7 +246,13 @@ def consultar_estado(request):
         form = ConsultaForm()
 
     estados = Estado.objects.order_by('orden')     # los pasos de la línea de tiempo
-    return render(request, 'consultar_estado.html', {'form': form, 'solicitud': solicitud, 'error': error, 'estados': estados})
+    return render(request, 'consultar_estado.html', {
+        'form': form,
+        'solicitud': solicitud,
+        'pago': pago,
+        'error': error,
+        'estados': estados,
+    })
 
 
 # PANTALLAS DEL PERSONAL
@@ -232,7 +260,7 @@ def consultar_estado(request):
 
 
 @login_required
-@permission_required('opticaApp.change_pagosolicitud', raise_exception=True)
+@user_passes_test(lambda user: user.is_staff)
 @require_POST
 def revisar_pago(request, idPago):
 
@@ -277,12 +305,14 @@ def revisar_pago(request, idPago):
 
     messages.success(request, mensaje)
 
+    if request.POST.get('origen') == 'detalle':
+        return redirect('detalle_solicitud', idSolicitud=pago.solicitud.idSolicitud)
+
     return redirect('lista_solicitudes')
 
 
 # HU03: cola de solicitudes con indicadores y buscador
 @login_required
-@permission_required('opticaApp.view_solicitud', raise_exception=True)   # solo quien puede VER solicitudes
 def lista_solicitudes(request):
     solicitudes = Solicitud.objects.select_related('cliente', 'tipo', 'estado').order_by('-fecha_creacion')
 
@@ -302,15 +332,12 @@ def lista_solicitudes(request):
     productos = ProductoLente.objects.all().order_by('-id')
     citas = Cita.objects.select_related('cliente').order_by('-fecha', '-hora')
 
-    # Los pagos son datos sensibles: solo se cargan si el rol puede revisarlos.
-    # Para los demás roles la lista queda vacía (none() = ningún resultado).
-    pagos_pendientes = PagoSolicitud.objects.none()
-    if request.user.has_perm('opticaApp.change_pagosolicitud'):
-        pagos_pendientes = PagoSolicitud.objects.select_related(
-            'solicitud', 'solicitud__cliente'
-        ).filter(
-            estado='Comprobante enviado'
-        ).order_by('-fecha_creacion')
+    pagos_pendientes = PagoSolicitud.objects.select_related(
+    'solicitud',
+    'solicitud__cliente'
+).filter(
+    estado='Comprobante enviado'
+).order_by('-fecha_creacion')
 
     return render(request, 'lista_solicitudes.html', {
         'solicitudes': solicitudes, 'q': q,
@@ -321,7 +348,7 @@ def lista_solicitudes(request):
 # Detalle de una solicitud. Aquí el personal también cambia el estado.
 
 @login_required
-@permission_required('opticaApp.view_solicitud', raise_exception=True)
+@user_passes_test(lambda user: user.is_staff)
 def detalle_solicitud(request, idSolicitud):
 
     solicitud = get_object_or_404(
@@ -332,10 +359,7 @@ def detalle_solicitud(request, idSolicitud):
     )
 
     if request.method == 'POST':
-        if not request.user.has_perm('opticaApp.change_solicitud'):
-            raise PermissionDenied
         form = EstadoForm(request.POST, instance=solicitud)
-
 
         if form.is_valid():
 
@@ -375,12 +399,17 @@ def detalle_solicitud(request, idSolicitud):
     else:
         form = EstadoForm(instance=solicitud)
 
+    pago = PagoSolicitud.objects.select_related('revisado_por').filter(
+        solicitud=solicitud
+    ).order_by('-fecha_creacion').first()
+
     return render(
         request,
         'detalle_solicitud.html',
         {
             'solicitud': solicitud,
-            'form': form
+            'form': form,
+            'pago': pago,
         }
     )
 
@@ -388,7 +417,7 @@ def detalle_solicitud(request, idSolicitud):
 # Pantalla del personal para editar el horario de atención (tabla HorarioAtencion).
 
 @login_required
-@permission_required('opticaApp.change_horarioatencion', raise_exception=True)
+@user_passes_test(lambda user: user.is_staff)
 @ensure_csrf_cookie
 def editar_horario(request):
     horarios = HorarioAtencion.objects.filter(activo=True).order_by('dia', 'hora_inicio')
@@ -495,7 +524,7 @@ def cita_creada(request, idCita):
 ## Funcion de editar estado de la solicitud de hora para examen de la vista
 
 @login_required
-@permission_required('opticaApp.change_cita', raise_exception=True)
+@user_passes_test(lambda user: user.is_staff)
 @require_POST
 def actualizar_estado_cita(request, idCita):
     cita = get_object_or_404(Cita, idCita=idCita)
@@ -511,7 +540,7 @@ def actualizar_estado_cita(request, idCita):
     return redirect('lista_solicitudes')
 
 @login_required
-@permission_required('opticaApp.view_cita', raise_exception=True) ####
+@user_passes_test(lambda user: user.is_staff)
 @ensure_csrf_cookie
 def calendario_admin(request):
     citas = Cita.objects.all()
@@ -537,7 +566,7 @@ def calendario_admin(request):
 
 
 @login_required
-@permiso_api('opticaApp.view_cita')
+@user_passes_test(lambda user: user.is_staff)
 @require_GET
 def api_citas(request):
     inicio = parse_date(request.GET.get('start', '')[:10])
@@ -554,8 +583,6 @@ def api_citas(request):
         'Cancelada': '#64748b',
         'Realizada': '#2563eb',
     }
-
-    puede_editar = request.user.has_perm('opticaApp.change_cita')
     eventos = []
     for cita in citas:
         inicio_dt = datetime.combine(cita.fecha, cita.hora)
@@ -570,7 +597,7 @@ def api_citas(request):
             'end': fin_evento,
             'backgroundColor': colores.get(cita.estado, '#64748b'),
             'borderColor': colores.get(cita.estado, '#64748b'),
-            'editable': puede_editar and cita.estado in ('Pendiente', 'Confirmada'),
+            'editable': cita.estado in ('Pendiente', 'Confirmada'),
             'extendedProps': {
                 'cliente': cita.cliente.nombre,
                 'rut': cita.cliente.rut_oculto(),
@@ -586,7 +613,7 @@ def api_citas(request):
 
 
 @login_required
-@permiso_api('opticaApp.add_horarioatencion')
+@user_passes_test(lambda user: user.is_staff)
 @require_POST
 def api_guardar_horario(request):
     """Guarda en MySQL un bloque semanal de atención configurado en el panel."""
@@ -615,7 +642,7 @@ def api_guardar_horario(request):
 
 
 @login_required
-@permiso_api('opticaApp.delete_horarioatencion')
+@user_passes_test(lambda user: user.is_staff)
 @require_POST
 def api_eliminar_horario(request, idHorario):
     horario = get_object_or_404(HorarioAtencion, pk=idHorario, activo=True)
@@ -626,7 +653,7 @@ def api_eliminar_horario(request, idHorario):
 
 
 @login_required
-@permiso_api('opticaApp.add_cita')
+@user_passes_test(lambda user: user.is_staff)
 @require_POST
 def api_crear_cita(request):
     """Crea una cita desde un espacio libre del calendario administrativo."""
@@ -686,7 +713,7 @@ def api_crear_cita(request):
 
 
 @login_required
-@permiso_api('opticaApp.change_cita')    # solo quien puede MODIFICAR citas
+@user_passes_test(lambda user: user.is_staff)
 @require_POST
 def api_actualizar_cita(request, idCita):
     try:
@@ -731,7 +758,7 @@ def api_actualizar_cita(request, idCita):
 ###Funcion para agregar catalogo desde el panel
 
 @login_required
-@permission_required('opticaApp.add_productolente', raise_exception=True)
+@user_passes_test(lambda user: user.is_staff)
 def agregar_lente(request):
     if request.method == 'POST':
         form = ProductoLenteForm(request.POST, request.FILES)
@@ -803,7 +830,7 @@ def buscar_cita_cancelacion(request):
 # ==========================================
 
 @login_required
-@permission_required('opticaApp.change_bannerinicio', raise_exception=True)
+@user_passes_test(lambda user: user.is_staff)
 def administrar_banners(request):
     banner_editar = None
 
@@ -857,5 +884,3 @@ def administrar_banners(request):
         'banners': banners,
         'banner_editar': banner_editar
     })
-
-

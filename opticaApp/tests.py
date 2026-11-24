@@ -137,3 +137,214 @@ class PaginasTests(TestCase):
     def test_paginas_publicas(self):
         for nombre in ('inicio', 'solicitar', 'consultar_estado'):
             self.assertEqual(self.client.get(reverse(nombre)).status_code, 200, nombre)
+
+
+@override_settings(
+    MEDIA_ROOT=tempfile.mkdtemp(),
+    STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    },
+)
+class PagoFlowTests(BaseTests):
+    def setUp(self):
+        super().setUp()
+        self.producto = ProductoLente.objects.create(
+            nombre='Marco Amaru Classic',
+            marca='Amaru',
+            precio=49990,
+            stock=5,
+            publicado=True,
+        )
+        self.datos_bancarios = DatosBancarios.objects.create(
+            titular='Óptica Amaru SpA',
+            rut='76.123.456-7',
+            banco='BancoEstado',
+            tipo_cuenta='Cuenta Vista',
+            numero_cuenta='123456789',
+            correo='pagos@opticaamaru.cl',
+            instrucciones='Indicar el folio en el asunto.',
+            activo=True,
+        )
+        self.staff = User.objects.create_user(
+            'staff_optica',
+            password='clave-segura-staff-123',
+            is_staff=True,
+        )
+
+    def _crear_solicitud(self, **extra):
+        datos = self.datos(
+            direccion='Av. Granaderos 1234',
+            comuna='Calama',
+            ciudad='Calama',
+            marco_personalizado='Marco negro liviano',
+            **extra,
+        )
+        return self.client.post(reverse('solicitar'), datos)
+
+    def _pdf_valido(self, nombre='comprobante.pdf'):
+        return SimpleUploadedFile(nombre, b'%PDF-1.4\n1 0 obj\n<<>>\nendobj\n', content_type='application/pdf')
+
+    def _png_valido(self, nombre='comprobante.png'):
+        return SimpleUploadedFile(nombre, b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR', content_type='image/png')
+
+    def test_creacion_solicitud_y_pago_pendiente_y_opciones(self):
+        r = self._crear_solicitud()
+        solicitud = Solicitud.objects.get()
+        self.assertRedirects(r, reverse('solicitud_creada', args=[solicitud.folio]))
+        pago = PagoSolicitud.objects.get(solicitud=solicitud)
+        self.assertEqual(pago.estado, 'Pendiente de pago')
+
+        r_creada = self.client.get(reverse('solicitud_creada', args=[solicitud.folio]))
+        self.assertContains(r_creada, 'Pagar ahora')
+        self.assertContains(r_creada, 'Pagar más tarde')
+        self.assertContains(r_creada, reverse('pagar_solicitud', args=[solicitud.folio]))
+
+    def test_pagar_mas_tarde_y_recuperar_con_rut_y_folio(self):
+        self._crear_solicitud()
+        solicitud = Solicitud.objects.get()
+
+        # Nuevo cliente/sesión sin autorización previa
+        cliente_nuevo = self.client.__class__()
+        r_pago_sin_rut = cliente_nuevo.get(reverse('pagar_solicitud', args=[solicitud.folio]))
+        self.assertContains(r_pago_sin_rut, 'Verifica tu identidad')
+        self.assertNotContains(r_pago_sin_rut, self.datos_bancarios.numero_cuenta)
+
+        # No se puede saltar la verificación de RUT enviando un comprobante directo
+        r_bypass = cliente_nuevo.post(
+            reverse('pagar_solicitud', args=[solicitud.folio]),
+            {'comprobante': self._pdf_valido()},
+        )
+        self.assertContains(r_bypass, 'Verifica tu identidad')
+        self.assertEqual(PagoSolicitud.objects.get(solicitud=solicitud).estado, 'Pendiente de pago')
+
+        # Recuperación mediante RUT + folio en consultar_estado
+        r_consulta = cliente_nuevo.post(
+            reverse('consultar_estado'),
+            {'rut': '16.482.915-4', 'folio': solicitud.folio},
+        )
+        self.assertContains(r_consulta, 'Pendiente de pago')
+        self.assertContains(r_consulta, 'Realizar pago')
+
+        # Ahora la sesión está autorizada para pagar
+        r_pago = cliente_nuevo.get(reverse('pagar_solicitud', args=[solicitud.folio]))
+        self.assertContains(r_pago, self.datos_bancarios.banco)
+        self.assertContains(r_pago, self.datos_bancarios.numero_cuenta)
+        self.assertContains(r_pago, 'Enviar comprobante para revisión')
+
+    def test_datos_bancarios_no_configurados_no_rompe_pantalla(self):
+        self._crear_solicitud()
+        solicitud = Solicitud.objects.get()
+        DatosBancarios.objects.all().delete()
+        r = self.client.get(reverse('pagar_solicitud', args=[solicitud.folio]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'todavía no están configurados')
+
+    def test_subir_pdf_e_imagen_validos_y_bloquear_reenvio_en_revision(self):
+        self._crear_solicitud()
+        solicitud = Solicitud.objects.get()
+
+        r = self.client.post(
+            reverse('pagar_solicitud', args=[solicitud.folio]),
+            {
+                'comprobante': self._pdf_valido(),
+                'estado': 'Pago confirmado',  # intento de manipulación del cliente
+            },
+        )
+        self.assertRedirects(r, reverse('pagar_solicitud', args=[solicitud.folio]))
+        pago = PagoSolicitud.objects.get(solicitud=solicitud)
+        self.assertEqual(pago.estado, 'Comprobante enviado')  # nunca Pago confirmado
+
+        # Mientras está en revisión, no permite reenviar otro comprobante
+        r_get = self.client.get(reverse('pagar_solicitud', args=[solicitud.folio]))
+        self.assertContains(r_get, 'Comprobante en revisión')
+        self.assertNotContains(r_get, 'Enviar comprobante para revisión')
+
+        r_doble = self.client.post(
+            reverse('pagar_solicitud', args=[solicitud.folio]),
+            {'comprobante': self._png_valido()},
+        )
+        self.assertRedirects(r_doble, reverse('pagar_solicitud', args=[solicitud.folio]))
+
+    def test_rechazar_formatos_invalidos_y_tamano_excesivo(self):
+        self._crear_solicitud()
+        solicitud = Solicitud.objects.get()
+        url = reverse('pagar_solicitud', args=[solicitud.folio])
+
+        # Formato .exe
+        exe = SimpleUploadedFile('virus.exe', b'MZ\x90\x00', content_type='application/octet-stream')
+        r_exe = self.client.post(url, {'comprobante': exe})
+        self.assertContains(r_exe, 'Solo se permiten imágenes JPG, JPEG, PNG o documentos PDF')
+        self.assertEqual(PagoSolicitud.objects.get(solicitud=solicitud).estado, 'Pendiente de pago')
+
+        # PDF falso (extensión .pdf pero cabecera inválida)
+        fake_pdf = SimpleUploadedFile('fake.pdf', b'MZ_FAKE_CONTENT', content_type='application/pdf')
+        r_fake = self.client.post(url, {'comprobante': fake_pdf})
+        self.assertContains(r_fake, 'no es válido')
+        self.assertEqual(PagoSolicitud.objects.get(solicitud=solicitud).estado, 'Pendiente de pago')
+
+        # Archivo mayor a 5 MB
+        grande = SimpleUploadedFile('grande.pdf', b'%PDF-1.4\n' + (b'0' * (5 * 1024 * 1024 + 10)), content_type='application/pdf')
+        r_grande = self.client.post(url, {'comprobante': grande})
+        self.assertContains(r_grande, 'no puede superar los 5 MB')
+        self.assertEqual(PagoSolicitud.objects.get(solicitud=solicitud).estado, 'Pendiente de pago')
+
+    def test_revision_administrativa_rechazo_correccion_y_confirmacion(self):
+        self._crear_solicitud()
+        solicitud = Solicitud.objects.get()
+        pago = PagoSolicitud.objects.get(solicitud=solicitud)
+
+        # Cliente no autenticado no puede revisar pago
+        anon = self.client.__class__()
+        r_anon = anon.post(reverse('revisar_pago', args=[pago.id]), {'accion': 'confirmar'})
+        self.assertEqual(r_anon.status_code, 302)
+        pago.refresh_from_db()
+        self.assertEqual(pago.estado, 'Pendiente de pago')
+
+        # Cliente sube imagen PNG válida
+        self.client.post(reverse('pagar_solicitud', args=[solicitud.folio]), {'comprobante': self._png_valido()})
+        pago.refresh_from_db()
+        self.assertEqual(pago.estado, 'Comprobante enviado')
+
+        # Staff rechaza el comprobante
+        staff_client = self.client.__class__()
+        staff_client.force_login(self.staff)
+        r_rechazo = staff_client.post(
+            reverse('revisar_pago', args=[pago.id]),
+            {'accion': 'rechazar', 'observacion': 'Imagen borrosa'},
+        )
+        self.assertRedirects(r_rechazo, reverse('lista_solicitudes'))
+        pago.refresh_from_db()
+        self.assertEqual(pago.estado, 'Rechazado')
+        self.assertEqual(pago.observacion, 'Imagen borrosa')
+        self.assertEqual(pago.revisado_por, self.staff)
+
+        # Cliente ve el rechazo y puede volver a enviar comprobante
+        r_pago_rech = self.client.get(reverse('pagar_solicitud', args=[solicitud.folio]))
+        self.assertContains(r_pago_rech, 'Imagen borrosa')
+        self.assertContains(r_pago_rech, 'Enviar comprobante para revisión')
+
+        self.client.post(reverse('pagar_solicitud', args=[solicitud.folio]), {'comprobante': self._pdf_valido('nuevo.pdf')})
+        pago.refresh_from_db()
+        self.assertEqual(pago.estado, 'Comprobante enviado')
+
+        # Staff confirma el pago
+        staff_client.post(reverse('revisar_pago', args=[pago.id]), {'accion': 'confirmar'})
+        pago.refresh_from_db()
+        self.assertEqual(pago.estado, 'Pago confirmado')
+
+        # Confirmado: cliente ya no puede volver a enviar comprobante
+        r_confirmado = self.client.get(reverse('pagar_solicitud', args=[solicitud.folio]))
+        self.assertContains(r_confirmado, 'Pago confirmado')
+        self.assertNotContains(r_confirmado, 'Enviar comprobante para revisión')
+
+        # Y ahora staff sí puede avanzar la solicitud a En taller
+        en_taller = Estado.objects.get(orden=3)
+        staff_client.post(reverse('detalle_solicitud', args=[solicitud.idSolicitud]), {'estado': en_taller.idEstado})
+        solicitud.refresh_from_db()
+        self.assertEqual(solicitud.estado.nombre, 'En taller')
+
+    def test_otros_modulos_no_afectados(self):
+        for nombre in ('inicio', 'catalogo', 'pedir_hora', 'consultar_estado'):
+            self.assertEqual(self.client.get(reverse(nombre)).status_code, 200, nombre)
+

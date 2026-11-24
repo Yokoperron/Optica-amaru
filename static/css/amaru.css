@@ -375,6 +375,35 @@ a.acceso:hover {
     color: #0a6e4a;
 }
 
+.estado.rechazado {
+    background: #fde2e2;
+    color: #9b1c1c;
+}
+
+.opcion-pago-card {
+    background: #f8fafd;
+    border: 1.5px solid var(--linea);
+    border-radius: 1rem;
+    padding: 1.25rem;
+}
+
+.pago-datos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+}
+
+.pago-dato-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .75rem 1rem;
+    background: #f8fafd;
+    border: 1px solid var(--linea);
+    border-radius: .8rem;
+}
+
 footer {
     background: var(--tinta);
     color: #b9c5dc;

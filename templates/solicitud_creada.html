@@ -32,21 +32,65 @@
 
     <main class="flex-grow-1">
         <div class="container py-4 py-md-5">
-            <div class="mx-auto text-center" style="max-width: 640px;">
+            <div class="mx-auto text-center" style="max-width: 720px;">
                 <div class="tarjeta py-5">
                     <div class="display-3">✅</div>
                     <h1 class="mt-2">¡Recibimos tu solicitud!</h1>
-                    <p class="lead text-secondary mt-2">Guarda este código. Con tu RUT y este código puedes ver en qué etapa va tu solicitud.</p>
+                    <p class="lead text-secondary mt-2">Guarda este código. Con tu RUT y este código puedes consultar tu solicitud o realizar el pago cuando lo necesites.</p>
                     <p class="my-4"><span class="codigo">{{ solicitud.folio }}</span></p>
-                    <p class="text-secondary">Entrega estimada: {{ solicitud.fecha_entrega|date:"j \d\e F" }}</p>
+                    <p class="text-secondary mb-2">Entrega estimada: <strong>{{ solicitud.fecha_entrega|date:"j \d\e F" }}</strong></p>
+                    <p class="mb-4">
+                        Estado del pago:
+                        <span class="estado {% if pago and pago.estado == 'Pago confirmado' %}listo{% elif pago and pago.estado == 'Comprobante enviado' %}taller{% elif pago and pago.estado == 'Rechazado' %}rechazado{% endif %}">
+                            {% if pago %}{{ pago.estado }}{% else %}Pendiente de pago{% endif %}
+                        </span>
+                    </p>
 
                     {% if not solicitud.receta %}
-                    <div class="alert alert-warning">Como no tienes receta vigente, te contactaremos para agendar tu examen de la vista.</div>
+                    <div class="alert alert-warning text-start">Como no tienes receta vigente, te contactaremos para agendar tu examen de la vista.</div>
                     {% endif %}
 
+                    <div class="row g-3 text-start mt-4">
+                        <div class="col-md-6">
+                            <div class="opcion-pago-card h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="etiqueta-azul d-block mb-1">Opción A</span>
+                                    <h2 class="h5 mb-2">Pagar ahora</h2>
+                                    <p class="text-secondary small mb-3">
+                                        Revisa los datos bancarios de Óptica Amaru, realiza tu transferencia y adjunta el comprobante.
+                                    </p>
+                                </div>
+                                <a class="btn btn-primary btn-lg w-100" href="{% url 'pagar_solicitud' solicitud.folio %}">
+                                    Pagar ahora →
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="opcion-pago-card h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="etiqueta-azul d-block mb-1">Opción B</span>
+                                    <h2 class="h5 mb-2">Pagar más tarde</h2>
+                                    <p class="text-secondary small mb-3">
+                                        Tu solicitud quedará guardada como <strong>Pendiente de pago</strong>. Puedes pagar después en <strong>Consultar estado</strong> usando tu <strong>RUT</strong> y tu folio <strong>{{ solicitud.folio }}</strong>.
+                                    </p>
+                                </div>
+                                <button type="button" class="btn btn-suave btn-lg w-100" data-bs-toggle="collapse" data-bs-target="#infoPagarDespues" aria-expanded="false">
+                                    Pagar más tarde
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-3 text-start" id="infoPagarDespues">
+                        <div class="alert alert-info mb-0">
+                            <strong>Tu solicitud sigue registrada.</strong> No necesitas transferir en este momento. Cuando quieras completar el pago, entra a
+                            <a href="{% url 'consultar_estado' %}" class="fw-bold">Consultar estado</a>, ingresa tu <strong>RUT</strong> y el folio <strong>{{ solicitud.folio }}</strong>, y presiona <strong>Realizar pago</strong>.
+                        </div>
+                    </div>
+
                     <p class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
-                        <a class="btn btn-primary btn-lg" href="{% url 'consultar_estado' %}">Ver el estado →</a>
-                        <a class="btn btn-suave btn-lg" href="{% url 'inicio' %}">Volver al inicio</a>
+                        <a class="btn btn-outline-primary" href="{% url 'consultar_estado' %}">Ver estado de mi solicitud</a>
+                        <a class="btn btn-suave" href="{% url 'inicio' %}">Volver al inicio</a>
                     </p>
                 </div>
             </div>
