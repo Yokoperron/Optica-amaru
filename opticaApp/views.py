@@ -16,12 +16,27 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
-
 from datetime import datetime
 
-
-
 from opticaApp.horarios import fecha_maxima, agenda_del_dia, horas_disponibles
+
+from functools import wraps #ayuda a escribir decoradores
+from django.contrib.auth.decorators import permission_required 
+from django.core.exceptions import PermissionDenied# para avisar que no tiene permiso un rol
+
+def permiso_api(codigo):
+    """Como permission_required, pero responde en JSON para las pantallas que usan fetch
+    (el calendario). Si no, el calendario mostraría una página de error ilegible."""
+    def decorador(vista):
+        @wraps(vista)
+        def envoltura(request, *args, **kwargs):
+            # has_perm pregunta si el usuario actual tiene el permiso indicado
+            if not request.user.has_perm(codigo):
+                return JsonResponse({'ok': False, 'error': 'No tienes permiso para esta acción.'}, status=403)
+            return vista(request, *args, **kwargs)
+        return envoltura
+    return decorador
+
 
 def crear_folio():
     # Código de seguimiento al azar: AMR- y 6 letras o números
@@ -217,7 +232,7 @@ def consultar_estado(request):
 
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permission_required('opticaApp.change_pagosolicitud', raise_exception=True)
 @require_POST
 def revisar_pago(request, idPago):
 
@@ -267,6 +282,7 @@ def revisar_pago(request, idPago):
 
 # HU03: cola de solicitudes con indicadores y buscador
 @login_required
+@permission_required('opticaApp.view_solicitud', raise_exception=True)   # solo quien puede VER solicitudes
 def lista_solicitudes(request):
     solicitudes = Solicitud.objects.select_related('cliente', 'tipo', 'estado').order_by('-fecha_creacion')
 
@@ -286,12 +302,15 @@ def lista_solicitudes(request):
     productos = ProductoLente.objects.all().order_by('-id')
     citas = Cita.objects.select_related('cliente').order_by('-fecha', '-hora')
 
-    pagos_pendientes = PagoSolicitud.objects.select_related(
-    'solicitud',
-    'solicitud__cliente'
-).filter(
-    estado='Comprobante enviado'
-).order_by('-fecha_creacion')
+    # Los pagos son datos sensibles: solo se cargan si el rol puede revisarlos.
+    # Para los demás roles la lista queda vacía (none() = ningún resultado).
+    pagos_pendientes = PagoSolicitud.objects.none()
+    if request.user.has_perm('opticaApp.change_pagosolicitud'):
+        pagos_pendientes = PagoSolicitud.objects.select_related(
+            'solicitud', 'solicitud__cliente'
+        ).filter(
+            estado='Comprobante enviado'
+        ).order_by('-fecha_creacion')
 
     return render(request, 'lista_solicitudes.html', {
         'solicitudes': solicitudes, 'q': q,
@@ -302,7 +321,7 @@ def lista_solicitudes(request):
 # Detalle de una solicitud. Aquí el personal también cambia el estado.
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permission_required('opticaApp.view_solicitud', raise_exception=True)
 def detalle_solicitud(request, idSolicitud):
 
     solicitud = get_object_or_404(
@@ -313,7 +332,10 @@ def detalle_solicitud(request, idSolicitud):
     )
 
     if request.method == 'POST':
+        if not request.user.has_perm('opticaApp.change_solicitud'):
+            raise PermissionDenied
         form = EstadoForm(request.POST, instance=solicitud)
+
 
         if form.is_valid():
 
@@ -366,7 +388,7 @@ def detalle_solicitud(request, idSolicitud):
 # Pantalla del personal para editar el horario de atención (tabla HorarioAtencion).
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permission_required('opticaApp.change_horarioatencion', raise_exception=True)
 @ensure_csrf_cookie
 def editar_horario(request):
     horarios = HorarioAtencion.objects.filter(activo=True).order_by('dia', 'hora_inicio')
@@ -473,7 +495,7 @@ def cita_creada(request, idCita):
 ## Funcion de editar estado de la solicitud de hora para examen de la vista
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permission_required('opticaApp.change_cita', raise_exception=True)
 @require_POST
 def actualizar_estado_cita(request, idCita):
     cita = get_object_or_404(Cita, idCita=idCita)
@@ -489,7 +511,7 @@ def actualizar_estado_cita(request, idCita):
     return redirect('lista_solicitudes')
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permission_required('opticaApp.view_cita', raise_exception=True) ####
 @ensure_csrf_cookie
 def calendario_admin(request):
     citas = Cita.objects.all()
@@ -515,7 +537,7 @@ def calendario_admin(request):
 
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permiso_api('opticaApp.view_cita')
 @require_GET
 def api_citas(request):
     inicio = parse_date(request.GET.get('start', '')[:10])
@@ -532,6 +554,8 @@ def api_citas(request):
         'Cancelada': '#64748b',
         'Realizada': '#2563eb',
     }
+
+    puede_editar = request.user.has_perm('opticaApp.change_cita')
     eventos = []
     for cita in citas:
         inicio_dt = datetime.combine(cita.fecha, cita.hora)
@@ -546,7 +570,7 @@ def api_citas(request):
             'end': fin_evento,
             'backgroundColor': colores.get(cita.estado, '#64748b'),
             'borderColor': colores.get(cita.estado, '#64748b'),
-            'editable': cita.estado in ('Pendiente', 'Confirmada'),
+            'editable': puede_editar and cita.estado in ('Pendiente', 'Confirmada'),
             'extendedProps': {
                 'cliente': cita.cliente.nombre,
                 'rut': cita.cliente.rut_oculto(),
@@ -562,7 +586,7 @@ def api_citas(request):
 
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permiso_api('opticaApp.add_horarioatencion')
 @require_POST
 def api_guardar_horario(request):
     """Guarda en MySQL un bloque semanal de atención configurado en el panel."""
@@ -591,7 +615,7 @@ def api_guardar_horario(request):
 
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permiso_api('opticaApp.delete_horarioatencion')
 @require_POST
 def api_eliminar_horario(request, idHorario):
     horario = get_object_or_404(HorarioAtencion, pk=idHorario, activo=True)
@@ -602,7 +626,7 @@ def api_eliminar_horario(request, idHorario):
 
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permiso_api('opticaApp.add_cita')
 @require_POST
 def api_crear_cita(request):
     """Crea una cita desde un espacio libre del calendario administrativo."""
@@ -662,7 +686,7 @@ def api_crear_cita(request):
 
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permiso_api('opticaApp.change_cita')    # solo quien puede MODIFICAR citas
 @require_POST
 def api_actualizar_cita(request, idCita):
     try:
@@ -707,7 +731,7 @@ def api_actualizar_cita(request, idCita):
 ###Funcion para agregar catalogo desde el panel
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permission_required('opticaApp.add_productolente', raise_exception=True)
 def agregar_lente(request):
     if request.method == 'POST':
         form = ProductoLenteForm(request.POST, request.FILES)
@@ -779,7 +803,7 @@ def buscar_cita_cancelacion(request):
 # ==========================================
 
 @login_required
-@user_passes_test(lambda user: user.is_staff)
+@permission_required('opticaApp.change_bannerinicio', raise_exception=True)
 def administrar_banners(request):
     banner_editar = None
 
@@ -833,3 +857,5 @@ def administrar_banners(request):
         'banners': banners,
         'banner_editar': banner_editar
     })
+
+
