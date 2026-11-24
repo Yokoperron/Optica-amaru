@@ -141,10 +141,27 @@
 
                 <!-- Datos bancarios -->
                 <div class="tarjeta mb-4">
-                    <h2 class="h5 mb-3">Datos bancarios para transferir</h2>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <h2 class="h5 mb-0">Datos bancarios para transferir</h2>
+                        {% if datos_bancarios %}
+                            <button type="button" class="btn btn-primary btn-sm btn-copiar-todos" id="btn-copiar-todos-datos">
+                                Copiar todos los datos
+                            </button>
+                        {% endif %}
+                    </div>
 
                     {% if datos_bancarios %}
-                        <div class="pago-datos-lista">
+                        <p class="small text-secondary mb-3">
+                            Al copiar todos los datos, la app de tu banco puede detectarlos automáticamente al transferir.
+                        </p>
+                        <div class="pago-datos-lista"
+                             id="bloque-datos-bancarios"
+                             data-titular="{{ datos_bancarios.titular }}"
+                             data-rut="{{ datos_bancarios.rut }}"
+                             data-banco="{{ datos_bancarios.banco }}"
+                             data-tipo-cuenta="{{ datos_bancarios.tipo_cuenta }}"
+                             data-numero-cuenta="{{ datos_bancarios.numero_cuenta }}"
+                             data-correo="{{ datos_bancarios.correo }}">
                             <div class="pago-dato-fila">
                                 <div>
                                     <small class="text-secondary d-block">Banco</small>
@@ -278,20 +295,88 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/copiar-codigo.js' %}" defer></script>
+    <script src="{% static 'js/rut-formato.js' %}" defer></script>
     <script>
-        document.querySelectorAll('.btn-copiar').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var target = document.getElementById(btn.getAttribute('data-copy-target'));
-                if (!target || !navigator.clipboard) return;
-                var textoOriginal = btn.textContent;
-                navigator.clipboard.writeText(target.textContent.trim()).then(function () {
-                    btn.textContent = '¡Copiado!';
-                    setTimeout(function () {
-                        btn.textContent = textoOriginal;
-                    }, 1800);
+        (function () {
+            function copiarConFallback(texto) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(texto).catch(function () {
+                        return copiarTextarea(texto);
+                    });
+                }
+                return copiarTextarea(texto);
+            }
+
+            function copiarTextarea(texto) {
+                return new Promise(function (resolve, reject) {
+                    var textarea = document.createElement('textarea');
+                    textarea.value = texto;
+                    textarea.setAttribute('readonly', '');
+                    textarea.style.position = 'fixed';
+                    textarea.style.top = '-9999px';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    textarea.setSelectionRange(0, texto.length);
+                    var ok = false;
+                    try {
+                        ok = document.execCommand('copy');
+                    } catch (e) {
+                        ok = false;
+                    }
+                    document.body.removeChild(textarea);
+                    if (ok) resolve();
+                    else reject();
+                });
+            }
+
+            document.querySelectorAll('.btn-copiar').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var target = document.getElementById(btn.getAttribute('data-copy-target'));
+                    if (!target) return;
+                    var textoOriginal = btn.textContent;
+                    copiarConFallback(target.textContent.trim()).then(function () {
+                        btn.textContent = '¡Copiado!';
+                        setTimeout(function () {
+                            btn.textContent = textoOriginal;
+                        }, 1800);
+                    });
                 });
             });
-        });
+
+            var btnTodos = document.getElementById('btn-copiar-todos-datos');
+            var bloque = document.getElementById('bloque-datos-bancarios');
+            if (btnTodos && bloque) {
+                var timerTodos = null;
+                btnTodos.addEventListener('click', function () {
+                    var lineas = [
+                        bloque.getAttribute('data-titular') || '',
+                        'RUT: ' + (bloque.getAttribute('data-rut') || ''),
+                        'Banco: ' + (bloque.getAttribute('data-banco') || ''),
+                        'Tipo de cuenta: ' + (bloque.getAttribute('data-tipo-cuenta') || ''),
+                        'Número de cuenta: ' + (bloque.getAttribute('data-numero-cuenta') || ''),
+                        'Correo: ' + (bloque.getAttribute('data-correo') || '')
+                    ];
+                    var textoCompleto = lineas.join('\n');
+                    var textoOriginal = 'Copiar todos los datos';
+
+                    copiarConFallback(textoCompleto).then(function () {
+                        clearTimeout(timerTodos);
+                        btnTodos.textContent = '✓ ¡Datos bancarios copiados!';
+                        btnTodos.classList.add('is-copied');
+                        timerTodos = setTimeout(function () {
+                            btnTodos.textContent = textoOriginal;
+                            btnTodos.classList.remove('is-copied');
+                        }, 2200);
+                    }).catch(function () {
+                        btnTodos.textContent = 'No se pudo copiar';
+                        setTimeout(function () {
+                            btnTodos.textContent = textoOriginal;
+                        }, 2200);
+                    });
+                });
+            }
+        })();
     </script>
 </body>
 </html>

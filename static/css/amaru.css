@@ -1388,4 +1388,31 @@ a {
     border: 0;
 }
 
+/* =====================================
+   VALIDACIÓN EN TIEMPO REAL DE RUT
+   ===================================== */
+.rut-feedback {
+    font-size: .82rem;
+    font-weight: 600;
+    margin-top: .35rem;
+    min-height: 1.1em;
+}
+
+.rut-feedback.is-ok {
+    color: var(--verde);
+}
+
+.rut-feedback.is-error {
+    color: #dc3545;
+}
+
+/* =====================================
+   BOTÓN COPIAR TODOS LOS DATOS BANCARIOS
+   ===================================== */
+.btn-copiar-todos.is-copied {
+    background-color: var(--verde);
+    border-color: var(--verde);
+    color: #fff;
+}
+
 
