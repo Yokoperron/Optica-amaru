@@ -23,17 +23,33 @@
             </button>
             <div class="collapse navbar-collapse" id="menu">
                 <ul class="navbar-nav ms-auto gap-1">
+                    {# ROLES: el menú muestra solo los enlaces que el rol del usuario puede usar (perms = permisos del usuario) #}
+                    {# "Personal" lo ve quien no ha iniciado sesión (para entrar) o quien puede ver solicitudes #}
+
+                                        {% if not user.is_authenticated or perms.opticaApp.view_solicitud %}
                     <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'lista_solicitudes' or request.resolver_match.url_name == 'detalle_solicitud' %}activo{% endif %}" href="{% url 'lista_solicitudes' %}">Personal</a></li>
-                    {% if user.is_authenticated %} <!-- el usuario actual "si el usuario ya inicio sesion, muestra los siguiente"-->
+                    {% endif %}
+
+                    {# Calendario: solo con permiso para ver citas (administradora) #}
+                    {% if perms.opticaApp.view_cita %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'calendario_admin' %}">Calendario</a></li>
+                    {% endif %}
+
+                    {# Horario: solo con permiso para modificar el horario de atención #}
+                    {% if perms.opticaApp.change_horarioatencion %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'editar_horario' %}">Horario</a></li>
+                    {% endif %}
+
+                    {# Cerrar sesión: cualquier usuario con sesión iniciada #}
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <form method="post" action="{% url 'salir' %}" class="d-inline"> <!-- el boton es un formulario que envia la orden de 'salir'-->
-                            {% csrf_token %} <!-- evita que un atacante obligue cerrar la sesion desde otra pagina -->
+                        <form method="post" action="{% url 'salir' %}" class="d-inline">
+                            {% csrf_token %}
                             <button type="submit" class="nav-link btn btn-link">Cerrar sesión</button>
                         </form>
                     </li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'calendario_admin' %}">Calendario</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'editar_horario' %}">Horario</a></li>
                     {% endif %}
+ 
                 </ul>
             </div>
         </div>

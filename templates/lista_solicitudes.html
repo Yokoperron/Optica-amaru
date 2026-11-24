@@ -1,8 +1,14 @@
-
 {% extends 'base.html' %}
 {% block titulo %}Panel de gestión · Óptica Amaru{% endblock %}
 
 {% block contenido %}
+
+{# ============================================================ #}
+{# ROLES Y PERMISOS                                             #}
+{# Cada sección se muestra solo si el usuario tiene el permiso  #}
+{# correspondiente (perms = permisos del usuario con sesión).   #}
+{# Esto es solo visual: la seguridad real está en views.py.     #}
+{# ============================================================ #}
 
 <p class="etiqueta-azul">Personal de la óptica</p>
 <h1>Panel de gestión</h1>
@@ -49,11 +55,16 @@
 
 </div>
 
+{# 1. Accesos de administración: catálogo (view_productolente) y citas (view_cita). #}
+{#    Si el rol no tiene ninguno de los dos, se oculta también el título.           #}
 <!-- Accesos de gestión -->
+ {% if perms.opticaApp.view_productolente or perms.opticaApp.view_cita %}
 <h2 class="mt-5 mb-3">Administración de la óptica</h2>
 
 <div class="row g-3 mb-5">
 
+    {# Tarjeta del catálogo: solo con permiso para ver productos #}
+    {% if perms.opticaApp.view_productolente %}
     <div class="col-md-6">
         <div class="tarjeta h-100">
             <div class="d-flex align-items-center gap-3 mb-3">
@@ -79,7 +90,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {# Tarjeta de citas: solo con permiso para ver citas (administradora) #}
+    {% if perms.opticaApp.view_cita %}
     <div class="col-md-6">
         <div class="tarjeta h-100">
             <div class="d-flex align-items-center gap-3 mb-3">
@@ -105,16 +119,23 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
 </div>
+{% endif %}
 
+{# 2. Portada: solo quien puede modificar los banners #}
+{% if perms.opticaApp.change_bannerinicio %}
 <h2 class="mt-5 mb-3">Administrar portada</h2>
 
 <a href="{% url 'administrar_banners' %}" class="btn btn-outline-primary">
     Administrar Portada
 </a>
+{% endif %}
 
-
+{# 3. Comprobantes de pago: solo quien puede revisar pagos (son datos sensibles). #}
+{#    La vista revisar_pago también exige este permiso.                            #}
+{% if perms.opticaApp.change_pagosolicitud %}
 <!-- REVISION DE PAGOS -->
 <div class="gestion-seccion mt-5">
 
@@ -223,8 +244,11 @@
     {% endfor %}
 
 </div>
+{% endif %}
 
 
+{# Solicitudes de lentes: esta pantalla ya exige view_solicitud en views.py, #}
+{# por eso aquí no hace falta un {% if %} adicional.                         #}
 <!-- Solicitudes de lentes -->
 <h2 class="mb-3">Solicitudes de lentes</h2>
 
@@ -293,6 +317,9 @@
 
 </div>
 
+{# 4. Catálogo de lentes: se ve con view_productolente; #}
+{#    el botón "Agregar lente" solo con add_productolente. #}
+{% if perms.opticaApp.view_productolente %}
 <!-- CATÁLOGO DE LENTES -->
 <div class="gestion-seccion mt-5">
 
@@ -303,9 +330,11 @@
             <p class="text-secondary small mb-0">Productos registrados en la óptica.</p>
         </div>
         <span class="badge text-bg-primary">{{ productos|length }} productos</span>
+        {% if perms.opticaApp.add_productolente %}
         <a href="{% url 'agregar_lente' %}" class="btn btn-primary">
-    <span class="me-1">+</span> Agregar lente
-</a>
+            <span class="me-1">+</span> Agregar lente
+        </a>
+        {% endif %}
     </div>
 
     <div class="tabla table-responsive">
@@ -346,8 +375,12 @@
         </table>
     </div>
 </div>
+{% endif %}
 
 
+{# 5. Reservas de horas: la sección se ve con view_cita (administradora); #}
+{#    el selector de estado y el botón Guardar solo con change_cita.      #}
+{% if perms.opticaApp.view_cita %}
 <!-- RESERVAS DE HORAS -->
 <div class="gestion-seccion mt-5">
 
@@ -383,27 +416,33 @@
                     <td>{{ cita.hora|time:"H:i" }}</td>
                     <td>{{ cita.motivo }}</td>
                    <td>
-    <form method="POST"
-          action="{% url 'actualizar_estado_cita' cita.idCita %}"
-          class="d-flex align-items-center gap-2">
+                        {# Con permiso para modificar citas: formulario para cambiar el estado #}
+                        {% if perms.opticaApp.change_cita %}
+                        <form method="POST"
+                            action="{% url 'actualizar_estado_cita' cita.idCita %}"
+                            class="d-flex align-items-center gap-2">
 
-        {% csrf_token %}
+                            {% csrf_token %}
 
-        <select name="estado" class="form-select form-select-sm">
-            {% for valor, etiqueta in estados_cita %}
-                <option value="{{ valor }}"
-                    {% if cita.estado == valor %}selected{% endif %}>
-                    {{ etiqueta }}
-                </option>
-            {% endfor %}
-        </select>
+                            <select name="estado" class="form-select form-select-sm">
+                                {% for valor, etiqueta in estados_cita %}
+                                    <option value="{{ valor }}"
+                                        {% if cita.estado == valor %}selected{% endif %}>
+                                        {{ etiqueta }}
+                                    </option>
+                                {% endfor %}
+                            </select>
 
-        <button type="submit" class="btn btn-primary btn-sm">
-            Guardar
-        </button>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                Guardar
+                            </button>
 
-    </form>
-</td>
+                        </form>
+                        {% else %}
+                            {# Sin permiso para modificar: se muestra el estado solo como texto #}
+                            {{ cita.estado }}
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -416,6 +455,7 @@
         </table>
     </div>
 </div>
+{% endif %}
 
 
 {% endblock %}
