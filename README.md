@@ -1,3 +1,6 @@
+<img width="680" height="671" alt="image" src="https://github.com/user-attachments/assets/9a7c9bcd-1fdb-47a4-b7ca-b91a90e1a878" />
+
+
 pip install Pilow --> para imagenes
 pip no me acuerdo 
 
