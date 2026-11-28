@@ -1,0 +1,15 @@
+ÓPTICA AMARU · CONVENIOS DIGITALES
+
+Hola {{ solicitud.cliente.nombre }},
+
+{{ titulo }}
+{{ mensaje }}
+
+Detalle de tu solicitud:
+- Código de solicitud: {{ solicitud.codigo }}
+- Convenio: {{ solicitud.convenio.nombre }}
+- Estado actual: {{ solicitud.get_estado_display }}
+
+{% if url_portal %}Puedes consultar tu seguimiento en: {{ url_portal }}{% endif %}
+
+Óptica Amaru

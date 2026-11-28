@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block titulo %}Convenios Digitales · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <p class="etiqueta-azul mb-1">Convenios Digitales</p>
+        <h1 class="mb-2">Beneficios ópticos sin papeleo</h1>
+        <p class="text-secondary mb-0" style="max-width: 680px;">
+            Solicita tus lentes con convenio de forma 100% digital, sigue tu acreditación en línea y acude a la óptica solo a retirar tu pedido.
+        </p>
+    </div>
+    <a href="{% url 'portal_beneficiario' %}" class="btn btn-suave btn-lg">
+        Mis solicitudes de convenio →
+    </a>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-4">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if convenios %}
+<div class="row g-4">
+    {% for convenio in convenios %}
+    <div class="col-md-6 col-lg-4">
+        <article class="tarjeta h-100 d-flex flex-column justify-content-between convenio-card">
+            <div>
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <span class="etiqueta-azul mb-0">{{ convenio.institucion|default:"Convenio Óptica Amaru" }}</span>
+                    <span class="badge text-bg-success">Vigente</span>
+                </div>
+                <h2 class="h4 mb-2">{{ convenio.nombre }}</h2>
+                <p class="text-secondary small mb-3">{{ convenio.descripcion }}</p>
+
+                <div class="p-3 rounded-3 bg-light mb-3">
+                    <small class="text-secondary d-block fw-semibold mb-1">Beneficios disponibles</small>
+                    <div class="small">{{ convenio.beneficios|linebreaksbr }}</div>
+                </div>
+
+                {% if convenio.requisitos_acreditacion or convenio.condiciones_uso or convenio.restricciones %}
+                <div class="mb-3">
+                    <button type="button"
+                            class="btn btn-link p-0 text-decoration-none small fw-semibold"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#condiciones-{{ convenio.idConvenio }}"
+                            aria-expanded="false">
+                        Ver condiciones y requisitos ▾
+                    </button>
+                    <div class="collapse mt-2" id="condiciones-{{ convenio.idConvenio }}">
+                        <div class="p-3 rounded-3 border bg-white small">
+                            {% if convenio.requisitos_acreditacion %}
+                                <p class="mb-2"><strong>Requisitos de acreditación:</strong><br>{{ convenio.requisitos_acreditacion|linebreaksbr }}</p>
+                            {% endif %}
+                            {% if convenio.condiciones_uso %}
+                                <p class="mb-2"><strong>Condiciones de uso:</strong><br>{{ convenio.condiciones_uso|linebreaksbr }}</p>
+                            {% endif %}
+                            {% if convenio.restricciones %}
+                                <p class="mb-0 text-secondary"><strong>Restricciones:</strong><br>{{ convenio.restricciones|linebreaksbr }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="pt-2">
+                {% if convenio.fecha_termino %}
+                    <p class="small text-secondary mb-2">Válido hasta el {{ convenio.fecha_termino|date:"d/m/Y" }}</p>
+                {% endif %}
+                <a href="{% url 'solicitar_convenio' convenio.slug %}" class="btn btn-primary w-100">
+                    Solicitar con este convenio →
+                </a>
+            </div>
+        </article>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="tarjeta text-center py-5">
+    <h2 class="h4 mb-2">No hay convenios activos en este momento</h2>
+    <p class="text-secondary mb-4">Si ya realizaste una solicitud anteriormente, puedes revisar su estado en tu portal.</p>
+    <a href="{% url 'portal_beneficiario' %}" class="btn btn-primary">Ir a mis solicitudes</a>
+</div>
+{% endif %}
+{% endblock %}

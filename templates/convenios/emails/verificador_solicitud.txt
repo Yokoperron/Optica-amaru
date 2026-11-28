@@ -1,0 +1,22 @@
+OPTICA AMARU — SOLICITUD DE VERIFICACIÓN DE BENEFICIARIO
+
+Hola {{ contacto.nombre }},
+
+Se ha registrado una solicitud para acceder al convenio "{{ convenio.nombre }}" en Óptica Amaru y necesitamos confirmar la pertenencia del solicitante a {{ convenio.institucion|default:convenio.nombre }}.
+
+Datos de la solicitud:
+- Solicitud: {{ solicitud.codigo }}
+- Beneficiario: {{ solicitud.cliente.nombre }}
+{% if incluir_rut %}- RUT: {{ solicitud.cliente.rut }}
+{% endif %}- Institución: {{ convenio.institucion|default:convenio.nombre }}
+- Fecha de solicitud: {{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}
+
+Por favor, ingresa al siguiente enlace seguro para confirmar o rechazar la pertenencia:
+{{ url_verificacion }}
+
+Fecha límite de respuesta: {{ verificacion.fecha_expiracion|date:"d/m/Y H:i" }}
+
+Aviso de seguridad:
+Este enlace es de un solo uso, personal e intransferible. No requiere crear cuenta ni iniciar sesión. Si no reconoces esta solicitud, puedes ignorar este mensaje o rechazarla desde el enlace.
+
+Óptica Amaru

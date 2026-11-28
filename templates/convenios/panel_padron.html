@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block titulo %}Padrón de {{ convenio.nombre }} · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<p class="mb-3"><a href="{% url 'panel_convenios_lista' %}" class="fw-semibold text-decoration-none">← Volver a convenios</a></p>
+<h1 class="mb-1">Padrón interno: {{ convenio.nombre }}</h1>
+<p class="text-secondary mb-4">Los beneficiarios registrados y vigentes en esta nómina se validan automáticamente al solicitar.</p>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-4">
+        <form method="post" class="tarjeta">
+            {% csrf_token %}
+            <h2 class="h5 mb-3">Agregar / actualizar beneficiario</h2>
+            <div class="mb-2"><label class="form-label small" for="{{ form.rut.id_for_label }}">RUT *</label>{{ form.rut }}</div>
+            <div class="mb-2"><label class="form-label small" for="{{ form.nombre_completo.id_for_label }}">Nombre completo *</label>{{ form.nombre_completo }}</div>
+            <div class="mb-2"><label class="form-label small" for="{{ form.codigo_interno.id_for_label }}">Código interno</label>{{ form.codigo_interno }}</div>
+            <div class="mb-2"><label class="form-label small" for="{{ form.fecha_vigencia_hasta.id_for_label }}">Vigente hasta</label>{{ form.fecha_vigencia_hasta }}</div>
+            <div class="mb-3"><label class="form-label small" for="{{ form.observacion.id_for_label }}">Observación</label>{{ form.observacion }}</div>
+            <label class="check mb-3">{{ form.activo }} <span>Activo en padrón</span></label>
+            <button type="submit" class="btn btn-primary w-100">Guardar en padrón</button>
+        </form>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="tabla table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>RUT</th>
+                        <th>Nombre</th>
+                        <th>Cód. interno</th>
+                        <th>Vigencia</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in padron %}
+                    <tr>
+                        <td class="fw-semibold">{{ p.rut }}</td>
+                        <td>{{ p.nombre_completo }}</td>
+                        <td>{{ p.codigo_interno|default:"-" }}</td>
+                        <td>{{ p.fecha_vigencia_hasta|date:"d/m/Y"|default:"Sin término" }}</td>
+                        <td>
+                            {% if p.vigente %}<span class="badge text-bg-success">Vigente</span>{% else %}<span class="badge text-bg-secondary">Inactivo</span>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="toggle_beneficiario">
+                                <input type="hidden" name="beneficiario_id" value="{{ p.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">{% if p.activo %}Desactivar{% else %}Activar{% endif %}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-secondary py-4">Aún no hay beneficiarios en el padrón de este convenio.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

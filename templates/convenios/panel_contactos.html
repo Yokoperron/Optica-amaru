@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block titulo %}Contactos verificadores · {{ convenio.nombre }}{% endblock %}
+
+{% block contenido %}
+<p class="mb-3"><a href="{% url 'panel_convenios_lista' %}" class="fw-semibold text-decoration-none">← Volver a convenios</a></p>
+<h1 class="mb-1">Contactos verificadores: {{ convenio.nombre }}</h1>
+<p class="text-secondary mb-4">Solo los contactos autorizados aquí recibirán enlaces seguros de verificación para este convenio.</p>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-4">
+        <form method="post" class="tarjeta">
+            {% csrf_token %}
+            <h2 class="h5 mb-3">Agregar / actualizar contacto</h2>
+            <div class="mb-2"><label class="form-label small" for="{{ form.nombre.id_for_label }}">Nombre *</label>{{ form.nombre }}</div>
+            <div class="mb-2"><label class="form-label small" for="{{ form.correo.id_for_label }}">Correo electrónico *</label>{{ form.correo }}</div>
+            <div class="mb-2"><label class="form-label small" for="{{ form.empresa.id_for_label }}">Empresa / Institución</label>{{ form.empresa }}</div>
+            <div class="mb-2"><label class="form-label small" for="{{ form.cargo.id_for_label }}">Cargo o función</label>{{ form.cargo }}</div>
+            <div class="mb-3"><label class="form-label small" for="{{ form.metodo_confirmacion.id_for_label }}">Método de confirmación</label>{{ form.metodo_confirmacion }}</div>
+            <label class="check mb-3">{{ form.activo }} <span>Contacto activo</span></label>
+            <button type="submit" class="btn btn-primary w-100">Guardar contacto</button>
+        </form>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="tabla table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Cargo / Empresa</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in contactos %}
+                    <tr>
+                        <td class="fw-semibold">{{ c.nombre }}</td>
+                        <td>{{ c.correo }}</td>
+                        <td>
+                            <div>{{ c.cargo|default:"-" }}</div>
+                            <small class="text-secondary">{{ c.empresa|default:convenio.institucion }}</small>
+                        </td>
+                        <td>
+                            {% if c.activo %}<span class="badge text-bg-success">Activo</span>{% else %}<span class="badge text-bg-secondary">Inactivo</span>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="toggle_contacto">
+                                <input type="hidden" name="contacto_id" value="{{ c.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">{% if c.activo %}Desactivar{% else %}Activar{% endif %}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-secondary py-4">Aún no hay contactos verificadores registrados para este convenio.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

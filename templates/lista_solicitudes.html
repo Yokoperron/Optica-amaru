@@ -121,6 +121,35 @@
     </div>
     {% endif %}
 
+    <div class="col-md-6">
+        <div class="tarjeta h-100">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="icono-gestion">🤝</div>
+                <div>
+                    <h3 class="h5 mb-1">Convenios Digitales</h3>
+                    <p class="text-secondary small mb-0">
+                        Administra convenios, acreditaciones y retiros con QR.
+                    </p>
+                </div>
+            </div>
+
+            <ul class="small text-secondary">
+                <li>Configurar convenios, beneficios y padrón interno.</li>
+                <li>Validar acreditaciones y emitir autorizaciones QR.</li>
+                <li>Registrar entregas presenciales con verificación digital.</li>
+            </ul>
+
+            <div class="d-flex flex-wrap gap-2 mt-auto">
+                <a href="{% url 'panel_convenios_dashboard' %}" class="btn btn-primary">
+                    Panel de convenios →
+                </a>
+                <a href="{% url 'panel_convenios_retiros' %}" class="btn btn-suave">
+                    Retiros QR
+                </a>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endif %}
 

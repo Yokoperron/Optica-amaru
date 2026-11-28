@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block titulo %}Gestión de retiros y QR · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <p class="etiqueta-azul mb-1">Entregas presenciales</p>
+        <h1 class="mb-0">Gestión de retiros y verificación QR</h1>
+    </div>
+    <a href="{% url 'panel_convenios_dashboard' %}" class="btn btn-outline-secondary">Volver al dashboard</a>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <form method="get" class="tarjeta h-100">
+            <h2 class="h5 mb-2">Buscar solicitud o autorización</h2>
+            <p class="small text-secondary mb-3">Ingresa el código de solicitud (<code>CNV-...</code>), el código de autorización (<code>AUT-...</code>) o pega el token/URL del QR.</p>
+            <div class="input-group">
+                <input type="text" name="codigo" value="{{ codigo_busqueda }}" class="form-control" placeholder="CNV-XXXXXX o AUT-XXXXXXXX" required>
+                <button type="submit" class="btn btn-primary">Verificar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="tarjeta h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h5 mb-0">Escanear código QR</h2>
+                <button type="button" class="btn btn-suave btn-sm" id="btn-iniciar-qr">Abrir cámara</button>
+            </div>
+            <p class="small text-secondary mb-2" id="qr-status">Usa la cámara de tu dispositivo o lector QR para verificar la autorización del beneficiario.</p>
+            <video id="qr-video" class="w-100 rounded-3 d-none" playsinline muted style="max-height: 240px; object-fit: cover;"></video>
+        </div>
+    </div>
+</div>
+
+<div class="tarjeta mb-4">
+    <h2 class="h5 mb-3">Pedidos listos para retiro ({{ listas_retiro|length }})</h2>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Solicitud</th>
+                    <th>Autorización</th>
+                    <th>Beneficiario</th>
+                    <th>Convenio</th>
+                    <th>Producto</th>
+                    <th class="text-end">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in listas_retiro %}
+                <tr>
+                    <td class="fw-bold">{{ s.codigo }}</td>
+                    <td>{% if s.autorizacion %}{{ s.autorizacion.codigo_autorizacion }}{% else %}-{% endif %}</td>
+                    <td>{{ s.cliente.nombre }}</td>
+                    <td>{{ s.convenio.nombre }}</td>
+                    <td>{% if s.producto %}{{ s.producto.nombre }}{% else %}Marco personalizado{% endif %}</td>
+                    <td class="text-end">
+                        {% if s.autorizacion %}
+                            <a href="{% url 'panel_convenios_verificar_qr' s.autorizacion.qr_token %}" class="btn btn-sm btn-success">Verificar y entregar →</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-secondary py-4">No hay pedidos pendientes de retiro.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="tarjeta">
+    <h2 class="h5 mb-3">Últimas entregas registradas</h2>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Código</th><th>Beneficiario</th><th>Convenio</th><th>Entregado por</th><th>Fecha y hora</th></tr></thead>
+            <tbody>
+                {% for e in entregas_recientes %}
+                <tr>
+                    <td class="fw-semibold">{{ e.codigo }}</td>
+                    <td>{{ e.cliente.nombre }}</td>
+                    <td>{{ e.convenio.nombre }}</td>
+                    <td>{{ e.entregada_por.username|default:"Personal" }}</td>
+                    <td>{{ e.fecha_entrega|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-secondary py-3">Sin entregas registradas aún.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var btn = document.getElementById('btn-iniciar-qr');
+    var video = document.getElementById('qr-video');
+    var status = document.getElementById('qr-status');
+    var stream = null;
+
+    if (!btn || !video) return;
+
+    btn.addEventListener('click', async function () {
+        if (!('BarcodeDetector' in window) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            status.textContent = 'Tu navegador no soporta escaneo directo. Puedes usar la cámara nativa o pegar el código arriba.';
+            return;
+        }
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            video.classList.remove('d-none');
+            await video.play();
+            status.textContent = 'Apunta la cámara al código QR del beneficiario...';
+
+            var detector = new BarcodeDetector({ formats: ['qr_code'] });
+            var scan = async function () {
+                if (!stream) return;
+                try {
+                    var codes = await detector.detect(video);
+                    if (codes.length > 0 && codes[0].rawValue) {
+                        var raw = codes[0].rawValue.trim();
+                        stream.getTracks().forEach(function (t) { t.stop(); });
+                        window.location.href = "{% url 'panel_convenios_retiros' %}?codigo=" + encodeURIComponent(raw);
+                        return;
+                    }
+                } catch (e) {}
+                requestAnimationFrame(scan);
+            };
+            requestAnimationFrame(scan);
+        } catch (err) {
+            status.textContent = 'No se pudo acceder a la cámara. Revisa los permisos o busca por código.';
+        }
+    });
+})();
+</script>
+{% endblock %}

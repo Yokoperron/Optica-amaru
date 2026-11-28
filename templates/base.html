@@ -23,6 +23,7 @@
             </button>
             <div class="collapse navbar-collapse" id="menu">
                 <ul class="navbar-nav ms-auto gap-1">
+<<<<<<< HEAD
                     {# ROLES: el menú muestra solo los enlaces que el rol del usuario puede usar (perms = permisos del usuario) #}
                     {# "Personal" lo ve quien no ha iniciado sesión (para entrar) o quien puede ver solicitudes #}
 
@@ -42,6 +43,13 @@
 
                     {# Cerrar sesión: cualquier usuario con sesión iniciada #}
                     {% if user.is_authenticated %}
+=======
+                    <li class="nav-item"><a class="nav-link" href="{% url 'convenios_publico' %}">Convenios</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'lista_solicitudes' or request.resolver_match.url_name == 'detalle_solicitud' %}activo{% endif %}" href="{% url 'lista_solicitudes' %}">Personal</a></li>
+                    {% if user.is_authenticated %} <!-- el usuario actual "si el usuario ya inicio sesion, muestra los siguiente"-->
+                    <li class="nav-item"><a class="nav-link" href="{% url 'panel_convenios_dashboard' %}">Panel convenios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'panel_convenios_retiros' %}">Retiros QR</a></li>
+>>>>>>> 7a6b839 (convenios, qr, correo)
                     <li class="nav-item">
                         <form method="post" action="{% url 'salir' %}" class="d-inline">
                             {% csrf_token %}

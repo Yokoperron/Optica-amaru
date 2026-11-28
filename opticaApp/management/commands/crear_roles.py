@@ -20,7 +20,12 @@ PERMISOS = {
     'Asistente de ventas': [
         'view_solicitud',
         'change_solicitud',
-        'view_productolente'],
+        'view_productolente',
+        'view_convenio',
+        'view_solicitudconvenio',
+        'view_autorizacionconvenio',
+        'deliver_solicitudconvenio',
+    ],
 }
 
 class Command(BaseCommand):

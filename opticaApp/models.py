@@ -249,3 +249,15 @@ class BannerInicio(models.Model):
 
     def __str__(self):
         return self.titulo or f'Banner {self.id}'
+
+
+from opticaApp.models_convenios import (  # noqa: E402, F401
+    AutorizacionConvenio,
+    BeneficiarioPadronConvenio,
+    ContactoVerificadorConvenio,
+    Convenio,
+    HistorialSolicitudConvenio,
+    NotificacionConvenio,
+    SolicitudConvenio,
+    VerificacionExternaConvenio,
+)

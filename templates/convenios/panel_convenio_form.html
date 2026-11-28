@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block titulo %}{% if es_edicion %}Editar{% else %}Nuevo{% endif %} convenio · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="mx-auto" style="max-width: 860px;">
+    <p class="mb-3"><a href="{% url 'panel_convenios_lista' %}" class="fw-semibold text-decoration-none">← Volver a convenios</a></p>
+    <h1 class="mb-4">{% if es_edicion %}Editar convenio{% else %}Crear nuevo convenio{% endif %}</h1>
+
+    <form method="post" class="tarjeta">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label" for="{{ form.nombre.id_for_label }}">Nombre *</label>{{ form.nombre }}</div>
+            <div class="col-md-6"><label class="form-label" for="{{ form.institucion.id_for_label }}">Empresa / Institución</label>{{ form.institucion }}</div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label" for="{{ form.slug.id_for_label }}">Slug URL</label>{{ form.slug }}</div>
+            <div class="col-md-6"><label class="form-label" for="{{ form.metodo_validacion.id_for_label }}">Método de verificación</label>{{ form.metodo_validacion }}</div>
+        </div>
+
+        <div class="mb-3"><label class="form-label" for="{{ form.descripcion.id_for_label }}">Descripción *</label>{{ form.descripcion }}</div>
+        <div class="mb-3"><label class="form-label" for="{{ form.beneficios.id_for_label }}">Beneficios disponibles *</label>{{ form.beneficios }}</div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label" for="{{ form.condiciones_uso.id_for_label }}">Condiciones del convenio</label>{{ form.condiciones_uso }}</div>
+            <div class="col-md-6"><label class="form-label" for="{{ form.restricciones.id_for_label }}">Restricciones</label>{{ form.restricciones }}</div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6"><label class="form-label" for="{{ form.info_beneficiarios.id_for_label }}">Info visible para beneficiarios</label>{{ form.info_beneficiarios }}</div>
+            <div class="col-md-6"><label class="form-label" for="{{ form.info_administrativa.id_for_label }}">Información administrativa interna</label>{{ form.info_administrativa }}</div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label" for="{{ form.fecha_inicio.id_for_label }}">Fecha inicio</label>{{ form.fecha_inicio }}</div>
+            <div class="col-md-3"><label class="form-label" for="{{ form.fecha_termino.id_for_label }}">Fecha término</label>{{ form.fecha_termino }}</div>
+            <div class="col-md-2"><label class="form-label" for="{{ form.dias_vigencia_verificacion.id_for_label }}">Vigencia link (días)</label>{{ form.dias_vigencia_verificacion }}</div>
+            <div class="col-md-2"><label class="form-label" for="{{ form.max_solicitudes_por_beneficiario.id_for_label }}">Máx. solic.</label>{{ form.max_solicitudes_por_beneficiario }}</div>
+            <div class="col-md-2"><label class="form-label" for="{{ form.vigencia_autorizacion_dias.id_for_label }}">Vigencia QR (días)</label>{{ form.vigencia_autorizacion_dias }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.productos_permitidos.id_for_label }}">Productos permitidos (vacío = todos)</label>
+            {{ form.productos_permitidos }}
+        </div>
+
+        <div class="d-flex flex-wrap gap-3 mb-4">
+            <label class="check">{{ form.activo }} <span>Convenio activo</span></label>
+            <label class="check">{{ form.requiere_aprobacion_interna }} <span>Requiere aprobación interna tras verificación externa</span></label>
+            <label class="check">{{ form.incluir_rut_en_correo_verificacion }} <span>Incluir RUT en correo de verificación</span></label>
+            <label class="check">{{ form.permite_marco_personalizado }} <span>Permite marco personalizado</span></label>
+            <label class="check">{{ form.requiere_receta }} <span>Receta obligatoria</span></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">Guardar convenio</button>
+    </form>
+</div>
+{% endblock %}

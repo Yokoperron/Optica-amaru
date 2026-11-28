@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block titulo %}Panel de Convenios Digitales · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <p class="etiqueta-azul mb-1">Personal de la óptica</p>
+        <h1 class="mb-1">Convenios Digitales</h1>
+        <p class="text-secondary mb-0">Administra solicitudes, verificaciones externas por enlace seguro, autorizaciones y retiros.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'panel_convenios_retiros' %}" class="btn btn-primary">Gestión de retiros / QR</a>
+        {% if puede_gestionar %}
+            <a href="{% url 'panel_convenios_lista' %}" class="btn btn-suave">Administrar convenios</a>
+        {% endif %}
+        <a href="{% url 'lista_solicitudes' %}" class="btn btn-outline-secondary">Panel general</a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-3">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Dashboard KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2"><div class="indicador"><b>{{ resumen.total }}</b><span>Totales</span></div></div>
+    <div class="col-6 col-md-4 col-xl-2"><div class="indicador"><b>{{ resumen.pendientes }}</b><span>Pend. verificación</span></div></div>
+    <div class="col-6 col-md-4 col-xl-2"><div class="indicador"><b>{{ resumen.verif_enviadas }}</b><span>Enlaces enviados</span></div></div>
+    <div class="col-6 col-md-4 col-xl-2"><div class="indicador"><b>{{ resumen.verif_confirmadas }}</b><span>Confirmadas</span></div></div>
+    <div class="col-6 col-md-4 col-xl-2"><div class="indicador {% if resumen.verif_rechazadas or resumen.verif_expiradas %}rojo{% endif %}"><b>{{ resumen.verif_rechazadas }} / {{ resumen.verif_expiradas }}</b><span>Rechaz. / Expir.</span></div></div>
+    <div class="col-6 col-md-4 col-xl-2"><div class="indicador"><b>{{ resumen.autorizadas }} / {{ resumen.listas_retiro }} / {{ resumen.entregadas }}</b><span>Aut. / Ret. / Entr.</span></div></div>
+</div>
+
+<!-- Buscador y filtros -->
+<form method="get" class="tarjeta mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small" for="f-q">Buscar (RUT, nombre, código)</label>
+            <input type="search" id="f-q" name="q" value="{{ filtros.q }}" class="form-control" placeholder="Ej: CNV-, 16482915-4, Juan">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small" for="f-conv">Convenio</label>
+            <select id="f-conv" name="convenio" class="form-select">
+                <option value="">Todos</option>
+                {% for c in convenios %}
+                    <option value="{{ c.idConvenio }}" {% if filtros.convenio == c.idConvenio|stringformat:"s" %}selected{% endif %}>{{ c.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small" for="f-est">Estado</label>
+            <select id="f-est" name="estado" class="form-select">
+                <option value="">Todos</option>
+                {% for val, etq in estados %}
+                    <option value="{{ val }}" {% if filtros.estado == val %}selected{% endif %}>{{ etq }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <div class="flex-grow-1">
+                <label class="form-label small" for="f-desde">Desde</label>
+                <input type="date" id="f-desde" name="fecha_desde" value="{{ filtros.fecha_desde }}" class="form-control">
+            </div>
+            <div class="flex-grow-1">
+                <label class="form-label small" for="f-hasta">Hasta</label>
+                <input type="date" id="f-hasta" name="fecha_hasta" value="{{ filtros.fecha_hasta }}" class="form-control">
+            </div>
+        </div>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+        <a href="{% url 'panel_convenios_dashboard' %}" class="btn btn-suave btn-sm">Limpiar</a>
+    </div>
+</form>
+
+<!-- Tabla de solicitudes -->
+<div class="tabla table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Beneficiario</th>
+                <th>Convenio</th>
+                <th>Verificación externa</th>
+                <th>Estado solicitud</th>
+                <th>Fecha</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in solicitudes %}
+            {% with v=s.verificacion_actual %}
+            <tr>
+                <td><span class="fw-bold codigo-copiable" data-copy-code="{{ s.codigo }}">{{ s.codigo }}</span></td>
+                <td>
+                    <div class="fw-semibold">{{ s.cliente.nombre }}</div>
+                    <small class="text-secondary">{{ s.cliente.rut_oculto }}</small>
+                </td>
+                <td>{{ s.convenio.nombre }}</td>
+                <td>
+                    {% if v %}
+                        <span class="badge {% if v.estado == 'confirmada' %}text-bg-success{% elif v.estado == 'rechazada' or v.estado == 'expirada' %}text-bg-danger{% elif v.estado == 'enviada' %}text-bg-primary{% else %}text-bg-warning text-dark{% endif %}">
+                            {{ v.get_estado_display }}
+                        </span>
+                        <div class="small text-secondary">{{ v.contacto_verificador.nombre }}</div>
+                    {% else %}
+                        <span class="small text-secondary">{{ s.get_estado_acreditacion_display }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge {% if s.estado == 'lista_retiro' or s.estado == 'entregada' %}text-bg-success{% elif s.estado == 'rechazada' or s.estado == 'cancelada' %}text-bg-danger{% elif s.estado == 'autorizada' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">
+                        {{ s.get_estado_display }}
+                    </span>
+                </td>
+                <td>{{ s.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                <td class="text-end">
+                    <a href="{% url 'panel_convenio_solicitud_detalle' s.idSolicitudConvenio %}" class="btn btn-sm btn-outline-primary">Gestionar →</a>
+                </td>
+            </tr>
+            {% endwith %}
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center text-secondary py-5">No hay solicitudes de convenio que coincidan con el filtro.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

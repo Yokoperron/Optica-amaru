@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ solicitud.codigo }} · Gestión Convenios{% endblock %}
+
+{% block contenido %}
+<p class="mb-3">
+    <a href="{% url 'panel_convenios_dashboard' %}" class="fw-semibold text-decoration-none">← Volver al panel de convenios</a>
+</p>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} mb-3">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-7">
+        <div class="tarjeta mb-4">
+            <p class="etiqueta-azul mb-1">Solicitud <span class="codigo-copiable" data-copy-code="{{ solicitud.codigo }}">{{ solicitud.codigo }}</span></p>
+            <h1 class="h2 mb-2">{{ solicitud.cliente.nombre }}</h1>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge text-bg-primary">{{ solicitud.get_estado_display }}</span>
+                <span class="badge text-bg-light border text-dark">{{ solicitud.get_estado_acreditacion_display }}</span>
+            </div>
+
+            <table class="table mb-0">
+                <tr><th>RUT</th><td>{{ solicitud.cliente.rut }}</td></tr>
+                <tr><th>Contacto</th><td>{{ solicitud.cliente.contacto }} · {{ solicitud.cliente.telefono }} {{ solicitud.cliente.email }}</td></tr>
+                <tr><th>Convenio</th><td>{{ solicitud.convenio.nombre }} ({{ solicitud.convenio.institucion|default:"Directo" }})</td></tr>
+                <tr><th>Código declarado</th><td>{{ solicitud.codigo_beneficiario_declarado|default:"No indicado" }}</td></tr>
+                <tr><th>Producto</th><td>{% if solicitud.producto %}{{ solicitud.producto.nombre }} (${{ solicitud.producto.precio }}){% else %}No seleccionado{% endif %}</td></tr>
+                {% if solicitud.marco_personalizado %}<tr><th>Marco descrito</th><td>{{ solicitud.marco_personalizado }}</td></tr>{% endif %}
+                <tr><th>Tipo / Filtro</th><td>{% if solicitud.tipo_lente %}{{ solicitud.tipo_lente.nombre }}{% else %}No especificado{% endif %}{% if solicitud.filtro_azul %} · Con filtro azul{% endif %}</td></tr>
+                <tr>
+                    <th>Receta</th>
+                    <td>
+                        {% if solicitud.receta %}<a href="{{ solicitud.receta.url }}" target="_blank" rel="noopener noreferrer">Ver receta →</a>{% else %}No adjunta{% endif %}
+                    </td>
+                </tr>
+                {% if solicitud.motivo_acreditacion %}<tr><th>Nota verificación</th><td>{{ solicitud.motivo_acreditacion }}</td></tr>{% endif %}
+                {% if solicitud.fecha_entrega %}<tr><th>Entrega</th><td>{{ solicitud.fecha_entrega|date:"d/m/Y H:i" }} por {{ solicitud.entregada_por.username|default:"Personal" }} (Receptor: {{ solicitud.receptor_nombre }})</td></tr>{% endif %}
+            </table>
+        </div>
+
+        <div class="tarjeta mb-4">
+            <h2 class="h5 mb-3">Verificación externa por enlace seguro</h2>
+            {% if verificacion_actual %}
+            <div class="p-3 rounded-3 bg-light border mb-3 small">
+                <div class="row g-2">
+                    <div class="col-sm-6"><strong>Código:</strong> {{ verificacion_actual.codigo_verificacion }}</div>
+                    <div class="col-sm-6"><strong>Estado:</strong> {{ verificacion_actual.get_estado_display }}</div>
+                    <div class="col-sm-6"><strong>Contacto:</strong> {{ verificacion_actual.contacto_verificador.nombre }} ({{ verificacion_actual.contacto_verificador.correo }})</div>
+                    <div class="col-sm-6"><strong>Enviada:</strong> {{ verificacion_actual.fecha_envio|date:"d/m/Y H:i"|default:"Pendiente de envío" }}</div>
+                    <div class="col-sm-6"><strong>Expira:</strong> {{ verificacion_actual.fecha_expiracion|date:"d/m/Y H:i" }}</div>
+                    <div class="col-sm-6"><strong>Respuesta:</strong> {{ verificacion_actual.fecha_respuesta|date:"d/m/Y H:i"|default:"Sin respuesta" }}</div>
+                    {% if verificacion_actual.resultado %}
+                        <div class="col-12"><strong>Resultado:</strong> {{ verificacion_actual.get_resultado_display }}{% if verificacion_actual.comentario_verificador %} — {{ verificacion_actual.comentario_verificador }}{% endif %}</div>
+                    {% endif %}
+                    {% if verificacion_actual.error_envio %}
+                        <div class="col-12 text-danger"><strong>Detalle envío:</strong> {{ verificacion_actual.error_envio }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+                <p class="small text-secondary">No se ha generado una verificación externa para esta solicitud.</p>
+            {% endif %}
+
+            {% if puede_validar and solicitud.estado in 'recibida,pendiente_verificacion,verificacion_enviada,verificacion_no_disponible' %}
+            <form method="post" class="d-flex flex-wrap gap-2 align-items-end">
+                {% csrf_token %}
+                {% if contactos_disponibles %}
+                <div class="flex-grow-1">
+                    <label class="form-label small" for="sel-contacto-verif">Contacto verificador</label>
+                    <select name="contacto_verificador_id" id="sel-contacto-verif" class="form-select form-select-sm">
+                        {% for c in contactos_disponibles %}
+                            <option value="{{ c.id }}" {% if solicitud.contacto_verificador_id == c.id %}selected{% endif %}>{{ c.nombre }} ({{ c.correo }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" name="accion" value="enviar_verificacion" class="btn btn-primary btn-sm">
+                    {% if verificacion_actual %}Reenviar nuevo enlace seguro{% else %}Enviar enlace seguro{% endif %}
+                </button>
+                {% else %}
+                    <p class="small text-danger mb-0">No hay contactos verificadores activos en este convenio. <a href="{% url 'panel_convenio_contactos' solicitud.convenio.idConvenio %}">Configurar contactos</a></p>
+                {% endif %}
+            </form>
+            {% endif %}
+        </div>
+
+        <div class="tarjeta">
+            <h2 class="h5 mb-3">Historial cronológico de auditoría</h2>
+            <ul class="list-group list-group-flush">
+                {% for h in historial %}
+                <li class="list-group-item px-0">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ h.get_estado_nuevo_display|default:h.evento }}</strong>
+                        <small class="text-secondary">{{ h.fecha|date:"d/m/Y H:i" }}{% if h.usuario %} · {{ h.usuario.username }}{% endif %}</small>
+                    </div>
+                    {% if h.comentario %}<p class="small text-secondary mb-0 mt-1">{{ h.comentario }}</p>{% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item px-0 text-secondary small">Sin registros.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="tarjeta mb-4">
+            <h2 class="h5 mb-3">Acciones disponibles</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label small" for="id_comentario">Observación / motivo</label>
+                    <textarea name="comentario" id="id_comentario" class="form-control" rows="2" placeholder="Opcional al avanzar; obligatorio al rechazar"></textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    {% if solicitud.estado in 'recibida,pendiente_verificacion,verificacion_no_disponible' and puede_validar %}
+                        <button type="submit" name="accion" value="validar_manual" class="btn btn-outline-primary">Validar manualmente</button>
+                    {% endif %}
+                    {% if solicitud.estado in 'verificacion_confirmada,verificacion_no_disponible' and puede_autorizar %}
+                        <button type="submit" name="accion" value="autorizar" class="btn btn-success">Autorizar beneficio y generar QR</button>
+                    {% endif %}
+                    {% if solicitud.estado == 'autorizada' and puede_autorizar %}
+                        <button type="submit" name="accion" value="en_preparacion" class="btn btn-primary">Pasar a preparación</button>
+                    {% endif %}
+                    {% if solicitud.estado in 'autorizada,en_preparacion' and puede_autorizar or solicitud.estado in 'autorizada,en_preparacion' and puede_entregar %}
+                        <button type="submit" name="accion" value="lista_retiro" class="btn btn-success">Marcar lista para retiro</button>
+                    {% endif %}
+                    {% if solicitud.estado == 'lista_retiro' and autorizacion and puede_entregar %}
+                        <a href="{% url 'panel_convenios_verificar_qr' autorizacion.qr_token %}" class="btn btn-primary">Ir a registrar retiro →</a>
+                    {% endif %}
+                    {% if solicitud.estado in 'recibida,pendiente_verificacion,verificacion_enviada,verificacion_confirmada,verificacion_no_disponible' and puede_validar %}
+                        <button type="submit" name="accion" value="rechazar" class="btn btn-outline-danger" onclick="return confirm('¿Confirmas rechazar esta solicitud?')">Rechazar solicitud</button>
+                    {% endif %}
+                    {% if solicitud.estado in 'autorizada,en_preparacion,lista_retiro' and puede_autorizar %}
+                        <button type="submit" name="accion" value="cancelar" class="btn btn-outline-secondary" onclick="return confirm('¿Cancelar esta solicitud y anular su autorización?')">Cancelar solicitud</button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        {% if autorizacion %}
+        <div class="tarjeta text-center">
+            <p class="etiqueta-azul mb-1">Autorización y Código de Retiro</p>
+            <h3 class="h5 mb-2"><span class="codigo-copiable" data-copy-code="{{ autorizacion.codigo_autorizacion }}">{{ autorizacion.codigo_autorizacion }}</span></h3>
+            <span class="badge mb-3 {% if autorizacion.estado == 'autorizada' %}text-bg-success{% elif autorizacion.estado == 'utilizada' %}text-bg-secondary{% else %}text-bg-danger{% endif %}">
+                {{ autorizacion.get_estado_display }}
+            </span>
+            {% if qr_svg %}
+                <div class="p-2 bg-light rounded-3 d-inline-block mb-2">{{ qr_svg|safe }}</div>
+            {% endif %}
+            <p class="small text-secondary mb-0">Vigencia: {{ autorizacion.vigencia_hasta|date:"d/m/Y"|default:"Sin límite" }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

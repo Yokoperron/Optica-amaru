@@ -22,6 +22,7 @@
             </button>
             <div class="collapse navbar-collapse" id="menu">
                 <ul class="navbar-nav ms-auto gap-1">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'convenios_publico' %}">Convenios</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'consultar_estado' %}">Consultar estado</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'catalogo' %}">Catálogo</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'lista_solicitudes' %}">Personal</a></li>
@@ -191,6 +192,16 @@
                 </div>
                         <h2 class="h4 mt-2">Consultar el estado</h2>
                         <p class="text-secondary mb-0">Con tu RUT y tu código ves en qué etapa va tu solicitud.</p>
+                    </a>
+                </div>
+                <div class="col-12">
+                    <a class="acceso d-flex flex-wrap justify-content-between align-items-center gap-3" href="{% url 'convenios_publico' %}">
+                        <div>
+                            <span class="etiqueta-azul d-block mb-1">Convenios Digitales</span>
+                            <h2 class="h4 mb-1">¿Tienes convenio con Óptica Amaru?</h2>
+                            <p class="text-secondary mb-0">Solicita tus beneficios ópticos en línea, obtén tu autorización digital con QR y retira sin papeleo.</p>
+                        </div>
+                        <span class="btn btn-primary">Ver convenios y portal →</span>
                     </a>
                 </div>
             </div>

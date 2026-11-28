@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block titulo %}Solicitud de convenio enviada · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="mx-auto text-center" style="max-width: 700px;">
+    <div class="tarjeta py-5">
+        <div class="display-4 mb-2">✅</div>
+        <p class="etiqueta-azul">Convenio Digital · {{ solicitud.convenio.nombre }}</p>
+        <h1 class="mb-2">¡Solicitud registrada!</h1>
+        <p class="text-secondary mb-3">
+            Guarda este código de seguimiento. Con tu RUT y este código podrás revisar cuándo responde tu institución y descargar tu código de retiro.
+        </p>
+
+        <div class="my-4">
+            <span class="codigo codigo-copiable" data-copy-code="{{ solicitud.codigo }}">{{ solicitud.codigo }}</span>
+            <span class="copia-ayuda">Haz clic o toca el código para copiarlo</span>
+        </div>
+
+        <div class="p-3 rounded-3 bg-light text-start mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <span class="text-secondary small">Estado de solicitud</span>
+                <span class="badge text-bg-primary">{{ solicitud.get_estado_display }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <span class="text-secondary small">Verificación</span>
+                <span class="badge {% if solicitud.estado_acreditacion == 'validada' or solicitud.estado_acreditacion == 'beneficio_autorizado' %}text-bg-success{% else %}text-bg-warning text-dark{% endif %}">
+                    {{ solicitud.get_estado_acreditacion_display }}
+                </span>
+            </div>
+            {% if verificacion %}
+                <p class="small text-secondary mb-0 mt-2">
+                    Verificación asignada a: <strong>{{ verificacion.contacto_verificador.nombre }}</strong>
+                    ({{ verificacion.get_estado_display }} · Expira {{ verificacion.fecha_expiracion|date:"d/m/Y H:i" }})
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <a href="{% url 'detalle_beneficiario_convenio' solicitud.codigo %}" class="btn btn-primary btn-lg">
+                Ver seguimiento de mi solicitud →
+            </a>
+            <a href="{% url 'portal_beneficiario' %}" class="btn btn-suave btn-lg">
+                Ir a mis solicitudes
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

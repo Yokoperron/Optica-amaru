@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block titulo %}Solicitar {{ convenio.nombre }} · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="mx-auto" style="max-width: 820px;">
+    <p class="mb-3">
+        <a href="{% url 'convenios_publico' %}" class="fw-semibold text-decoration-none">← Volver a convenios</a>
+    </p>
+
+    <div class="tarjeta mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div>
+                <p class="etiqueta-azul mb-1">{{ convenio.institucion|default:"Convenio Digital" }}</p>
+                <h1 class="h2 mb-1">{{ convenio.nombre }}</h1>
+            </div>
+            <span class="badge text-bg-primary">{{ convenio.get_metodo_validacion_display }}</span>
+        </div>
+        <p class="text-secondary mb-3">{{ convenio.descripcion }}</p>
+        <div class="row g-3 small">
+            <div class="col-md-6">
+                <div class="p-3 rounded-3 bg-light h-100">
+                    <strong class="d-block mb-1">Beneficios</strong>
+                    {{ convenio.beneficios|linebreaksbr }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 rounded-3 bg-light h-100">
+                    <strong class="d-block mb-1">Condiciones y verificación</strong>
+                    {% if convenio.condiciones_uso %}
+                        {{ convenio.condiciones_uso|linebreaksbr }}
+                    {% else %}
+                        Tu pertenencia será verificada digitalmente con el contacto autorizado de la institución, sin formularios impresos.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if convenio.restricciones %}
+            <div class="small text-secondary mt-3"><strong>Restricciones:</strong> {{ convenio.restricciones|linebreaksbr }}</div>
+        {% endif %}
+        {% if convenio.info_beneficiarios %}
+            <div class="alert alert-info mt-3 mb-0 small">{{ convenio.info_beneficiarios|linebreaksbr }}</div>
+        {% endif %}
+    </div>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="tarjeta" novalidate>
+        {% csrf_token %}
+        <h2 class="h4 mb-3">Completa tu solicitud digital</h2>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-5">
+                <label class="form-label" for="{{ form.rut.id_for_label }}">{{ form.rut.label }} *</label>
+                {{ form.rut }}
+                {% if form.rut.errors %}<div class="text-danger small mt-1">{{ form.rut.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="col-md-7">
+                <label class="form-label" for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }} *</label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors|striptags }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <span class="form-label d-block">{{ form.contacto.label }}</span>
+            <div class="opciones">
+                {% for opcion in form.contacto %}
+                    <label>{{ opcion.tag }} {{ opcion.choice_label }}</label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                {{ form.telefono }}
+                {% if form.telefono.errors %}<div class="text-danger small mt-1">{{ form.telefono.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }} *</label>
+                {{ form.email }}
+                <div class="form-text">Te enviaremos aquí tu código de seguimiento para que lo recuerdes.</div>
+                {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors|striptags }}</div>{% endif %}
+            </div>
+        </div>
+
+        {% if mostrar_selector_contacto %}
+        <div class="mb-4">
+            <label class="form-label" for="{{ form.contacto_verificador.id_for_label }}">{{ form.contacto_verificador.label }} *</label>
+            {{ form.contacto_verificador }}
+            <div class="form-text">Selecciona al encargado autorizado de tu institución para confirmar tu pertenencia.</div>
+            {% if form.contacto_verificador.errors %}<div class="text-danger small mt-1">{{ form.contacto_verificador.errors|striptags }}</div>{% endif %}
+        </div>
+        {% endif %}
+
+        <hr class="my-4">
+        <h2 class="h5 mb-3">Producto y receta</h2>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.tipo_lente.id_for_label }}">{{ form.tipo_lente.label }}</label>
+                {{ form.tipo_lente }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.producto.id_for_label }}">{{ form.producto.label }}</label>
+                {{ form.producto }}
+                {% if form.producto.errors %}<div class="text-danger small mt-1">{{ form.producto.errors|striptags }}</div>{% endif %}
+            </div>
+        </div>
+
+        {% if convenio.permite_marco_personalizado %}
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.marco_personalizado.id_for_label }}">{{ form.marco_personalizado.label }}</label>
+            {{ form.marco_personalizado }}
+        </div>
+        {% else %}
+            {{ form.marco_personalizado }}
+        {% endif %}
+
+        <div class="mb-3">
+            <label class="check">
+                {{ form.filtro_azul }}
+                <span>{{ form.filtro_azul.label }}</span>
+            </label>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.codigo_beneficiario_declarado.id_for_label }}">{{ form.codigo_beneficiario_declarado.label }}</label>
+                {{ form.codigo_beneficiario_declarado }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.receta.id_for_label }}">
+                    {{ form.receta.label }}{% if convenio.requiere_receta %} *{% endif %}
+                </label>
+                {{ form.receta }}
+                {% if form.receta.errors %}<div class="text-danger small mt-1">{{ form.receta.errors|striptags }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.detalle_beneficio.id_for_label }}">{{ form.detalle_beneficio.label }}</label>
+            {{ form.detalle_beneficio }}
+        </div>
+
+        <div class="mb-4">
+            <label class="check">
+                {{ form.acepta_datos }}
+                <span>{{ form.acepta_datos.label }}</span>
+            </label>
+            {% if form.acepta_datos.errors %}<div class="text-danger small mt-1">{{ form.acepta_datos.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100">Confirmar solicitud digital ✓</button>
+    </form>
+</div>
+{% endblock %}

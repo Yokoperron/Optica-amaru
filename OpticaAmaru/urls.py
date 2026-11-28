@@ -3,6 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from opticaApp.views import *
+from opticaApp.views_convenios import *
 from django.contrib.auth.views import LogoutView # vista que django ya trae, cierra sesion del usuario sin programar nada, esto es para admin.
 
 urlpatterns = [
@@ -35,6 +36,27 @@ urlpatterns = [
     path('pago/<str:folio>/',pagar_solicitud,name='pagar_solicitud'),
     path('panel/pago/<int:idPago>/revisar/',revisar_pago,name='revisar_pago'),
     path('panel/banners',administrar_banners, name='administrar_banners'),
+
+    # Módulo de Convenios Digitales (público, verificación externa y beneficiario)
+    path('convenios/', convenios_publico, name='convenios_publico'),
+    path('convenios/verificar/<str:raw_token>/', verificacion_externa_responder, name='verificacion_externa_responder'),
+    path('convenios/mis-solicitudes/', portal_beneficiario, name='portal_beneficiario'),
+    path('convenios/mis-solicitudes/salir/', salir_portal_beneficiario, name='salir_portal_beneficiario'),
+    path('convenios/mis-solicitudes/<str:codigo>/', detalle_beneficiario_convenio, name='detalle_beneficiario_convenio'),
+    path('convenios/solicitud/<str:codigo>/listo/', convenio_solicitud_creada, name='convenio_solicitud_creada'),
+    path('convenios/<slug:slug>/solicitar/', solicitar_convenio, name='solicitar_convenio'),
+
+    # Módulo de Convenios Digitales (personal y retiros)
+    path('panel/convenios/', panel_convenios_dashboard, name='panel_convenios_dashboard'),
+    path('panel/convenios/gestion/', panel_convenios_lista, name='panel_convenios_lista'),
+    path('panel/convenios/gestion/nuevo/', panel_convenio_crear, name='panel_convenio_crear'),
+    path('panel/convenios/gestion/<int:idConvenio>/editar/', panel_convenio_editar, name='panel_convenio_editar'),
+    path('panel/convenios/gestion/<int:idConvenio>/toggle/', panel_convenio_toggle, name='panel_convenio_toggle'),
+    path('panel/convenios/gestion/<int:idConvenio>/contactos/', panel_convenio_contactos, name='panel_convenio_contactos'),
+    path('panel/convenios/gestion/<int:idConvenio>/padron/', panel_convenio_padron, name='panel_convenio_padron'),
+    path('panel/convenios/solicitudes/<int:idSolicitudConvenio>/', panel_convenio_solicitud_detalle, name='panel_convenio_solicitud_detalle'),
+    path('panel/convenios/retiros/', panel_convenios_retiros, name='panel_convenios_retiros'),
+    path('panel/convenios/qr/<str:qr_token>/', panel_convenios_verificar_qr, name='panel_convenios_verificar_qr'),
 ]
 
 # Esto permite abrir las recetas subidas mientras se trabaja en el computador, O algo asi me explico el gepeto

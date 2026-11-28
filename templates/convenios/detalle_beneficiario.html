@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ solicitud.codigo }} · Convenios Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<p class="mb-3">
+    <a href="{% url 'portal_beneficiario' %}" class="fw-semibold text-decoration-none">← Volver a mis solicitudes</a>
+</p>
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-7">
+        <div class="tarjeta mb-4">
+            <p class="etiqueta-azul mb-1">Solicitud <span class="codigo-copiable" data-copy-code="{{ solicitud.codigo }}">{{ solicitud.codigo }}</span></p>
+            <span class="copia-ayuda mb-2">Haz clic o toca el código para copiarlo</span>
+            <h1 class="h2 mb-2">{{ solicitud.convenio.nombre }}</h1>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge {% if solicitud.estado == 'lista_retiro' or solicitud.estado == 'entregada' %}text-bg-success{% elif solicitud.estado == 'rechazada' or solicitud.estado == 'cancelada' %}text-bg-danger{% else %}text-bg-primary{% endif %}">
+                    {{ solicitud.get_estado_display }}
+                </span>
+                <span class="badge text-bg-light border text-dark">
+                    {{ solicitud.get_estado_acreditacion_display }}
+                </span>
+            </div>
+
+            {% if solicitud.estado == 'lista_retiro' %}
+                <div class="alert alert-success">
+                    <strong>¡Tus lentes están listos para retirar!</strong> Acude a Óptica Amaru con tu cédula de identidad y muestra tu código QR de retiro.
+                </div>
+            {% elif solicitud.estado == 'rechazada' %}
+                <div class="alert alert-danger">
+                    <strong>Solicitud no validada.</strong> {{ solicitud.motivo_acreditacion }}
+                </div>
+            {% elif solicitud.estado == 'verificacion_enviada' %}
+                <div class="alert alert-info">
+                    <strong>Esperando respuesta de tu institución.</strong> Se envió un enlace seguro al contacto autorizado para confirmar tu pertenencia.
+                </div>
+            {% endif %}
+
+            {% if verificacion %}
+            <div class="p-3 rounded-3 bg-light border mb-3 small">
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <span><strong>Verificación externa:</strong> {{ verificacion.get_estado_display }}</span>
+                    <span><strong>Contacto:</strong> {{ verificacion.contacto_verificador.nombre }}</span>
+                </div>
+                {% if verificacion.fecha_respuesta %}
+                    <div class="text-secondary mt-1">Respondida el {{ verificacion.fecha_respuesta|date:"d/m/Y H:i" }} · Resultado: {{ verificacion.get_resultado_display }}</div>
+                {% else %}
+                    <div class="text-secondary mt-1">Vence el {{ verificacion.fecha_expiracion|date:"d/m/Y H:i" }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <h2 class="h5 mt-4 mb-2">Seguimiento</h2>
+            <ol class="linea">
+                {% for clave, nombre in pasos %}
+                <li class="{% if solicitud.indice_paso > forloop.counter0 %}hecho{% elif solicitud.indice_paso == forloop.counter0 %}actual{% endif %}">
+                    <span class="bola">{% if solicitud.indice_paso > forloop.counter0 %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                    <b>{{ nombre }}</b>
+                </li>
+                {% endfor %}
+            </ol>
+
+            <div class="row g-2 mt-3">
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3 bg-light">
+                        <small class="text-secondary d-block">Beneficiario</small>
+                        <strong>{{ solicitud.cliente.nombre }}</strong>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3 bg-light">
+                        <small class="text-secondary d-block">Producto / Lente</small>
+                        <strong>{% if solicitud.producto %}{{ solicitud.producto.nombre }}{% else %}Marco personalizado{% endif %}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tarjeta">
+            <h2 class="h5 mb-3">Historial de movimientos</h2>
+            {% if historial %}
+            <ul class="list-group list-group-flush">
+                {% for h in historial %}
+                <li class="list-group-item px-0">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ h.get_estado_nuevo_display }}</strong>
+                        <small class="text-secondary">{{ h.fecha|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% if h.comentario %}
+                        <p class="small text-secondary mb-0 mt-1">{{ h.comentario }}</p>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+                <p class="small text-secondary mb-0">Sin movimientos adicionales.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="tarjeta text-center mb-4">
+            <p class="etiqueta-azul mb-1">Autorización y Código de Retiro</p>
+            {% if autorizacion %}
+                <h2 class="h4 mb-2">
+                    <span class="codigo-copiable" data-copy-code="{{ autorizacion.codigo_autorizacion }}">{{ autorizacion.codigo_autorizacion }}</span>
+                </h2>
+                <span class="copia-ayuda mb-3">Haz clic o toca el código para copiarlo</span>
+
+                <div class="mb-3">
+                    <span class="badge {% if autorizacion.estado == 'autorizada' %}text-bg-success{% elif autorizacion.estado == 'utilizada' %}text-bg-secondary{% else %}text-bg-danger{% endif %}">
+                        {{ autorizacion.get_estado_display }}
+                    </span>
+                    {% if autorizacion.vigencia_hasta %}
+                        <div class="small text-secondary mt-1">Válida hasta: {{ autorizacion.vigencia_hasta|date:"d/m/Y" }}</div>
+                    {% endif %}
+                </div>
+
+                {% if qr_svg %}
+                <div class="p-3 bg-light rounded-3 d-inline-block mb-3">
+                    {{ qr_svg|safe }}
+                </div>
+                <p class="small text-secondary mb-0">
+                    Presenta este código QR al retirar en Óptica Amaru. No expone datos personales.
+                </p>
+                {% endif %}
+            {% else %}
+                <h2 class="h5 mb-2">Pendiente de verificación</h2>
+                <p class="small text-secondary mb-0">
+                    Tu código de retiro y QR se habilitarán una vez confirmada tu pertenencia al convenio y autorizado el beneficio.
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="tarjeta">
+            <h2 class="h5 mb-3">Avisos de esta solicitud</h2>
+            {% for n in notificaciones %}
+                <div class="p-2 rounded-3 bg-light mb-2">
+                    <div class="d-flex justify-content-between">
+                        <strong class="small">{{ n.titulo }}</strong>
+                        <small class="text-secondary">{{ n.fecha_creacion|date:"d/m H:i" }}</small>
+                    </div>
+                    <p class="small text-secondary mb-0">{{ n.mensaje }}</p>
+                </div>
+            {% empty %}
+                <p class="small text-secondary mb-0">Sin avisos todavía.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

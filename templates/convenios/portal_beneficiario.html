@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block titulo %}Portal del beneficiario · Óptica Amaru{% endblock %}
+
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <p class="etiqueta-azul mb-1">Convenios Digitales</p>
+        <h1 class="mb-1">Portal del beneficiario</h1>
+        <p class="text-secondary mb-0">Consulta tus solicitudes de convenio, autorizaciones digitales, códigos QR y avisos.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'convenios_publico' %}" class="btn btn-suave">Ver convenios vigentes</a>
+        {% if rut_sesion %}
+            <form method="post" action="{% url 'salir_portal_beneficiario' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary">Cambiar de RUT</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-4">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if not rut_sesion %}
+<div class="mx-auto" style="max-width: 520px;">
+    <form method="post" class="tarjeta" novalidate>
+        {% csrf_token %}
+        <h2 class="h4 mb-2">Accede a tus solicitudes</h2>
+        <p class="text-secondary small mb-3">Ingresa tu RUT y el código de alguna de tus solicitudes de convenio para proteger tu privacidad.</p>
+
+        {% if error %}
+            <div class="alert alert-danger py-2">{{ error }}</div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.rut.id_for_label }}">{{ form.rut.label }}</label>
+            {{ form.rut }}
+            {% if form.rut.errors %}<div class="text-danger small mt-1">{{ form.rut.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.codigo.id_for_label }}">{{ form.codigo.label }}</label>
+            {{ form.codigo }}
+            {% if form.codigo.errors %}<div class="text-danger small mt-1">{{ form.codigo.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-100">Ver mis solicitudes</button>
+    </form>
+</div>
+{% else %}
+
+    {% if listas_retiro %}
+    <div class="alert alert-success d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <strong>¡Tienes {{ listas_retiro }} pedido(s) listo(s) para retirar!</strong>
+            Presenta tu código QR digital al acudir a Óptica Amaru.
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-8">
+            <div class="tarjeta">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h2 class="h4 mb-0">Mis solicitudes</h2>
+                        {% if cliente %}<small class="text-secondary">{{ cliente.nombre }} · {{ cliente.rut }}</small>{% endif %}
+                    </div>
+                    <span class="badge text-bg-primary">{{ solicitudes|length }} solicitud(es)</span>
+                </div>
+
+                {% if solicitudes %}
+                <div class="d-flex flex-column gap-3">
+                    {% for sol in solicitudes %}
+                    <div class="p-3 rounded-3 border bg-light">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div>
+                                <span class="fw-bold codigo-copiable" data-copy-code="{{ sol.codigo }}">{{ sol.codigo }}</span>
+                                <span class="text-secondary small ms-2">{{ sol.fecha_creacion|date:"d/m/Y" }}</span>
+                                <h3 class="h5 mt-1 mb-1">{{ sol.convenio.nombre }}</h3>
+                                <p class="small text-secondary mb-1">
+                                    {% if sol.producto %}
+                                        {{ sol.producto.nombre }} ({{ sol.producto.marca }})
+                                    {% elif sol.marco_personalizado %}
+                                        {{ sol.marco_personalizado|truncatechars:70 }}
+                                    {% else %}
+                                        Beneficio óptico
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge {% if sol.estado == 'lista_retiro' or sol.estado == 'entregada' %}text-bg-success{% elif sol.estado == 'rechazada' or sol.estado == 'cancelada' %}text-bg-danger{% elif sol.estado == 'autorizada' %}text-bg-primary{% else %}text-bg-warning text-dark{% endif %}">
+                                    {{ sol.get_estado_display }}
+                                </span>
+                                {% if sol.autorizacion %}
+                                    <div class="small text-success fw-semibold mt-1">Autorización {{ sol.autorizacion.codigo_autorizacion }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <span class="small text-secondary">Acreditación: <strong>{{ sol.get_estado_acreditacion_display }}</strong></span>
+                            <a href="{% url 'detalle_beneficiario_convenio' sol.codigo %}" class="btn btn-primary btn-sm">
+                                Ver detalle y QR →
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <p class="text-secondary mb-0">No tienes solicitudes de convenio registradas con este RUT.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="tarjeta">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">Notificaciones {% if no_leidas %}<span class="badge text-bg-danger">{{ no_leidas }}</span>{% endif %}</h2>
+                    {% if no_leidas %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="marcar_leidas">
+                        <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none">Marcar leídas</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% if notificaciones %}
+                <div class="d-flex flex-column gap-2">
+                    {% for n in notificaciones %}
+                    <div class="p-2 rounded-3 {% if not n.leida %}bg-primary bg-opacity-10 border border-primary-subtle{% else %}bg-light{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="small">{{ n.titulo }}</strong>
+                            <small class="text-secondary">{{ n.fecha_creacion|date:"d/m H:i" }}</small>
+                        </div>
+                        <p class="small text-secondary mb-0 mt-1">{{ n.mensaje }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <p class="small text-secondary mb-0">No hay notificaciones recientes.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

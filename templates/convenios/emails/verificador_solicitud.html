@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:24px;background:#eef3fb;font-family:Arial,Helvetica,sans-serif;color:#0f1b33;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #dfe7f2;border-radius:14px;overflow:hidden;">
+    <div style="background:#0b6ba8;color:#ffffff;padding:20px 24px;">
+      <p style="margin:0;font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.9;">Óptica Amaru · Convenios Digitales</p>
+      <h1 style="margin:6px 0 0;font-size:20px;">Solicitud de verificación de beneficiario</h1>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin-top:0;">Hola <strong>{{ contacto.nombre }}</strong>,</p>
+      <p style="color:#475569;line-height:1.5;">
+        Se ha ingresado una solicitud para utilizar el convenio <strong>{{ convenio.nombre }}</strong> en Óptica Amaru.
+        Necesitamos que confirmes si la siguiente persona pertenece actualmente a <strong>{{ convenio.institucion|default:convenio.nombre }}</strong>.
+      </p>
+
+      <div style="background:#f8fafd;border:1px solid #dfe7f2;border-radius:10px;padding:16px;margin:18px 0;">
+        <p style="margin:0 0 8px;"><strong>N° de solicitud:</strong> {{ solicitud.codigo }}</p>
+        <p style="margin:0 0 8px;"><strong>Beneficiario:</strong> {{ solicitud.cliente.nombre }}</p>
+        {% if incluir_rut %}
+          <p style="margin:0 0 8px;"><strong>RUT:</strong> {{ solicitud.cliente.rut }}</p>
+        {% endif %}
+        <p style="margin:0 0 8px;"><strong>Institución:</strong> {{ convenio.institucion|default:convenio.nombre }}</p>
+        <p style="margin:0;"><strong>Fecha de solicitud:</strong> {{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}</p>
+      </div>
+
+      <p style="text-align:center;margin:24px 0;">
+        <a href="{{ url_verificacion }}" style="display:inline-block;background:#0b6ba8;color:#ffffff;text-decoration:none;font-weight:bold;padding:13px 24px;border-radius:10px;">
+          Responder verificación ahora →
+        </a>
+      </p>
+
+      <p style="font-size:13px;color:#5a6a86;margin-bottom:12px;">
+        <strong>Fecha límite de respuesta:</strong> {{ verificacion.fecha_expiracion|date:"d/m/Y H:i" }}
+      </p>
+      <p style="font-size:12px;color:#5a6a86;border-top:1px solid #dfe7f2;padding-top:12px;margin-bottom:0;">
+        Aviso de seguridad: este enlace es único, confidencial y de un solo uso. No necesitas crear cuenta ni iniciar sesión en Óptica Amaru.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

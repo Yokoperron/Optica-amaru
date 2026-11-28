@@ -58,3 +58,52 @@ class DatosBancariosAdmin(admin.ModelAdmin):
 
     list_filter = ('banco', 'activo')
     search_fields = ('titular', 'rut', 'numero_cuenta')
+
+
+@admin.register(Convenio)
+class ConvenioAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'institucion', 'metodo_validacion', 'activo', 'fecha_inicio', 'fecha_termino')
+    list_filter = ('activo', 'metodo_validacion')
+    search_fields = ('nombre', 'institucion', 'slug')
+    prepopulated_fields = {'slug': ('nombre',)}
+
+
+@admin.register(ContactoVerificadorConvenio)
+class ContactoVerificadorConvenioAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'correo', 'convenio', 'empresa', 'cargo', 'activo')
+    list_filter = ('activo', 'convenio')
+    search_fields = ('nombre', 'correo', 'empresa')
+
+
+@admin.register(VerificacionExternaConvenio)
+class VerificacionExternaConvenioAdmin(admin.ModelAdmin):
+    list_display = ('codigo_verificacion', 'solicitud', 'contacto_verificador', 'estado', 'fecha_envio', 'fecha_expiracion')
+    list_filter = ('estado', 'convenio')
+    search_fields = ('codigo_verificacion', 'solicitud__codigo', 'contacto_verificador__correo')
+
+
+@admin.register(BeneficiarioPadronConvenio)
+class BeneficiarioPadronConvenioAdmin(admin.ModelAdmin):
+    list_display = ('nombre_completo', 'rut', 'convenio', 'codigo_interno', 'activo', 'fecha_vigencia_hasta')
+    list_filter = ('convenio', 'activo')
+    search_fields = ('nombre_completo', 'rut', 'codigo_interno')
+
+
+@admin.register(SolicitudConvenio)
+class SolicitudConvenioAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'convenio', 'cliente', 'estado', 'estado_acreditacion', 'fecha_creacion')
+    list_filter = ('estado', 'estado_acreditacion', 'convenio')
+    search_fields = ('codigo', 'cliente__nombre', 'cliente__rut')
+
+
+@admin.register(AutorizacionConvenio)
+class AutorizacionConvenioAdmin(admin.ModelAdmin):
+    list_display = ('codigo_autorizacion', 'convenio', 'beneficiario', 'estado', 'fecha_autorizacion', 'vigencia_hasta')
+    list_filter = ('estado', 'convenio')
+    search_fields = ('codigo_autorizacion', 'beneficiario__nombre', 'beneficiario__rut')
+
+
+@admin.register(NotificacionConvenio)
+class NotificacionConvenioAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'solicitud', 'leida', 'enviada_email', 'fecha_creacion')
+    list_filter = ('leida', 'enviada_email')

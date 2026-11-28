@@ -1415,4 +1415,17 @@ a {
     color: #fff;
 }
 
+/* =====================================
+   CONVENIOS DIGITALES
+   ===================================== */
+.convenio-card {
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.convenio-card:hover {
+    border-color: var(--azul);
+    box-shadow: 0 12px 28px -18px rgba(11, 107, 168, .35);
+    transform: translateY(-2px);
+}
+
 

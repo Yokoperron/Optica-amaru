@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block titulo %}Verificación QR · {{ autorizacion.codigo_autorizacion }}{% endblock %}
+
+{% block contenido %}
+<p class="mb-3">
+    <a href="{% url 'panel_convenios_retiros' %}" class="fw-semibold text-decoration-none">← Volver a gestión de retiros</a>
+</p>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="mx-auto" style="max-width: 760px;">
+    <div class="tarjeta">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+                <p class="etiqueta-azul mb-1">Verificación de Autorización Digital</p>
+                <h1 class="h2 mb-0">{{ autorizacion.codigo_autorizacion }}</h1>
+            </div>
+            <span class="badge {% if puede_entregar_ahora %}text-bg-success{% elif solicitud.estado == 'entregada' %}text-bg-secondary{% else %}text-bg-danger{% endif %}">
+                {{ solicitud.get_estado_display }}
+            </span>
+        </div>
+
+        <table class="table mb-4">
+            <tr><th>Solicitud</th><td><span class="fw-bold">{{ solicitud.codigo }}</span></td></tr>
+            <tr><th>Beneficiario</th><td>{{ autorizacion.beneficiario.nombre }} ({{ autorizacion.beneficiario.rut }})</td></tr>
+            <tr><th>Convenio</th><td>{{ autorizacion.convenio.nombre }}</td></tr>
+            <tr><th>Producto / Beneficio</th><td>{% if solicitud.producto %}{{ solicitud.producto.nombre }} ({{ solicitud.producto.marca }}){% else %}{{ solicitud.marco_personalizado|default:"Según solicitud" }}{% endif %}</td></tr>
+            <tr><th>Estado autorización</th><td>{{ autorizacion.get_estado_display }}{% if autorizacion.vigencia_hasta %} · Válida hasta {{ autorizacion.vigencia_hasta|date:"d/m/Y" }}{% endif %}</td></tr>
+            {% if solicitud.fecha_entrega %}
+            <tr><th>Entregado el</th><td>{{ solicitud.fecha_entrega|date:"d/m/Y H:i" }} por {{ solicitud.entregada_por.username|default:"Personal" }} (Receptor: {{ solicitud.receptor_nombre }})</td></tr>
+            {% endif %}
+        </table>
+
+        {% if puede_entregar_ahora %}
+        <form method="post" class="p-3 rounded-3 bg-light">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="registrar_entrega">
+            <h2 class="h5 mb-3">Registrar entrega presencial</h2>
+            <div class="mb-3">
+                <label class="form-label small" for="id_receptor">Nombre de quien retira</label>
+                <input type="text" id="id_receptor" name="receptor_nombre" class="form-control" value="{{ solicitud.cliente.nombre }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small" for="id_obs_entrega">Observación de entrega (opcional)</label>
+                <input type="text" id="id_obs_entrega" name="observacion_entrega" class="form-control" placeholder="Ej: Cédula verificada conforme">
+            </div>
+            <button type="submit" class="btn btn-success btn-lg w-100" onclick="return confirm('¿Confirmas la entrega de este pedido?')">
+                Confirmar y registrar entrega ✓
+            </button>
+        </form>
+        {% else %}
+        <div class="alert alert-warning mb-0">
+            <strong>Entrega bloqueada:</strong> {{ motivo_bloqueo }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
